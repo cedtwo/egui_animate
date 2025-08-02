@@ -38,8 +38,6 @@ const FADE_IN: Animation = Animation::new_in(0.5, |ui, normal| ui.set_opacity(no
 // Ui state.
 let mut show_ui = false;
 
-#
-#
 if ui.button("Click to show").clicked() {
     show_ui = true;
 }
@@ -58,7 +56,6 @@ animate(
         }
     },
 );
-#
 ```
 
 The following animation transitions between interfaces, dynamically setting the
@@ -80,8 +77,6 @@ enum MyMenu {
 let mut menu_state = MyMenu::MainMenu;
 let mut menu_anim_state = SLIDE_FADE_LEFT;
 
-#
-#
 animate(
     ui,
     "menu_anim",
@@ -108,7 +103,6 @@ animate(
         }
     },
 );
-#
 ```
 
 ### Examples

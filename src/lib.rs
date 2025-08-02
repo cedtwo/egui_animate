@@ -40,10 +40,8 @@
 //! let mut show_ui = false;
 //!
 //! # let ctx = egui::Context::default();
-//! #
 //! # ctx.run(egui::RawInput::default(), |ctx| {
 //! # egui::CentralPanel::default().show(ctx, |ui| {
-//! #
 //! if ui.button("Click to show").clicked() {
 //!     show_ui = true;
 //! }
@@ -62,7 +60,6 @@
 //!         }
 //!     },
 //! );
-//! #
 //! # });
 //! # });
 //! ```
@@ -92,10 +89,8 @@
 //! let mut menu_anim_state = SLIDE_FADE_LEFT;
 //!
 //! # let ctx = egui::Context::default();
-//! #
 //! # ctx.run(egui::RawInput::default(), |ctx| {
 //! # egui::CentralPanel::default().show(ctx, |ui| {
-//! #
 //! animate(
 //!     ui,
 //!     "menu_anim",
@@ -122,7 +117,6 @@
 //!         }
 //!     },
 //! );
-//! #
 //! # });
 //! # });
 //! ```
