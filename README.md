@@ -32,12 +32,18 @@ from `0.0` to `1.0` over a duration of 0.5 seconds. Animation begins when `show_
 is set to `true`.
 
 ```rust
-// Animation definition
+# use egui;
+# use eframe;
+# use egui_animate::*;
+// A animation that sets the (scoped) ui opacity from 0.0 to 1.0 over 0.5 seconds.
 const FADE_IN: Animation = Animation::new_in(0.5, |ui, normal| ui.set_opacity(normal));
 
 // Ui state.
 let mut show_ui = false;
 
+# let ctx = egui::Context::default();
+# ctx.run(egui::RawInput::default(), |ctx| {
+# egui::CentralPanel::default().show(ctx, |ui| {
 if ui.button("Click to show").clicked() {
     show_ui = true;
 }
@@ -56,12 +62,19 @@ animate(
         }
     },
 );
+# });
+# });
 ```
 
 The following animation transitions between interfaces, dynamically setting the
 animation on input.
 
 ```rust
+# use egui;
+# use eframe;
+# use egui_animate::*;
+# const SLIDE_FADE_LEFT: Animation = Animation::EMPTY;
+# const SLIDE_FADE_RIGHT: Animation = Animation::EMPTY;
 // Left and right slide animations. See the example project for definitions.
 // const SLIDE_FADE_LEFT: Animation = ..;
 // const SLIDE_FADE_RIGHT: Animation = ..;
@@ -77,6 +90,9 @@ enum MyMenu {
 let mut menu_state = MyMenu::MainMenu;
 let mut menu_anim_state = SLIDE_FADE_LEFT;
 
+# let ctx = egui::Context::default();
+# ctx.run(egui::RawInput::default(), |ctx| {
+# egui::CentralPanel::default().show(ctx, |ui| {
 animate(
     ui,
     "menu_anim",
@@ -103,6 +119,8 @@ animate(
         }
     },
 );
+# });
+# });
 ```
 
 ### Animation Run State
@@ -113,7 +131,14 @@ context. In the example below, `RunState` is used to disable an `egui::Button` f
 the duration of an animation.
 
 ```rust
-
+# use egui;
+# use eframe;
+# use egui_animate::*;
+# const MY_ANIM: Animation = Animation::EMPTY;
+# let mut my_state = 0u32;
+# let ctx = egui::Context::default();
+# ctx.run(egui::RawInput::default(), |ctx| {
+# egui::CentralPanel::default().show(ctx, |ui| {
 let button = egui::Button::new("Increment u32");
 
 // Get the `RunState` of "my_anim".
@@ -136,6 +161,8 @@ animate(
         // ...
     },
 );
+# });
+# });
 ```
 
 ### Examples

@@ -1,3 +1,5 @@
+use crate::ty::{AnimFn, AnimFnType};
+
 /// An animation defined by out-in [`AnimationSegment`](s).
 ///
 /// An animation must include either an *out* function, an *in* function, or both.
@@ -37,7 +39,7 @@
 ///
 /// const FADE_ANIM: Animation = Animation::new(0.2, out_fn, in_fn);
 /// ```
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Animation {
     /// The segment animating the prior value **out**.
     pub out_seg: AnimationSegment,
@@ -47,15 +49,11 @@ pub struct Animation {
 
 impl Animation {
     /// An empty placeholder animation.
-    pub const EMPTY: Animation =
+    pub const EMPTY: Self =
         Animation::from_segments(AnimationSegment::EMPTY, AnimationSegment::EMPTY);
 
     /// Create a new `Animation` with the given total `duration`, split over segments.
-    pub const fn new(
-        duration: f32,
-        out_fn: fn(&mut egui::Ui, f32),
-        in_fn: fn(&mut egui::Ui, f32),
-    ) -> Self {
+    pub const fn new(duration: f32, out_fn: AnimFnType, in_fn: AnimFnType) -> Self {
         let segment_duration = duration / 2.0;
 
         let out_seg = AnimationSegment::new(segment_duration, out_fn);
@@ -66,7 +64,7 @@ impl Animation {
 
     /// Create a new `Animation` with only the *out* segment. Passes the the prior
     /// value to the animation scope for the duration of the `out_fn`.
-    pub const fn new_out(duration: f32, out_fn: fn(&mut egui::Ui, f32)) -> Self {
+    pub const fn new_out(duration: f32, out_fn: AnimFnType) -> Self {
         let out_seg = AnimationSegment::new(duration, out_fn);
         let in_seg = AnimationSegment::EMPTY;
 
@@ -75,7 +73,7 @@ impl Animation {
 
     /// Create a new `Animation` with only the *in* segment. Passes the the mutated
     /// value to the animation scope for the duration of the `in_fn`.
-    pub const fn new_in(duration: f32, out_fn: fn(&mut egui::Ui, f32)) -> Self {
+    pub const fn new_in(duration: f32, out_fn: AnimFnType) -> Self {
         let out_seg = AnimationSegment::EMPTY;
         let in_seg = AnimationSegment::new(duration, out_fn);
 
@@ -90,6 +88,15 @@ impl Animation {
     /// Get the total duration of the animation.
     pub const fn duration(&self) -> f32 {
         self.out_seg.duration + self.in_seg.duration
+    }
+}
+
+impl Default for Animation {
+    fn default() -> Self {
+        Self {
+            out_seg: Default::default(),
+            in_seg: Default::default(),
+        }
     }
 }
 
@@ -113,28 +120,19 @@ pub struct AnimationSegment {
     /// The duration of the animation, in seconds.
     pub duration: f32,
     /// The [`Ui`] mutating function for the given `f32` normal.
-    pub anim_fn: fn(&mut egui::Ui, f32),
-}
-
-impl Default for AnimationSegment {
-    fn default() -> Self {
-        AnimationSegment::EMPTY
-    }
+    pub anim_fn: AnimFnType,
 }
 
 impl AnimationSegment {
     /// An empty placeholder animation segment.
-    const EMPTY: AnimationSegment = AnimationSegment {
+    const EMPTY: Self = AnimationSegment {
         duration: 0.0,
         anim_fn: |_, _| {},
     };
 
     /// Create a new `AnimationSegment` from the given `duration` and `animation` function.
-    pub const fn new(duration: f32, animation: fn(&mut egui::Ui, f32)) -> Self {
-        Self {
-            duration,
-            anim_fn: animation,
-        }
+    pub const fn new(duration: f32, anim_fn: AnimFnType) -> Self {
+        Self { duration, anim_fn }
     }
 
     /// Get the animation duration.
@@ -147,24 +145,8 @@ impl AnimationSegment {
     }
 
     /// Get the animation function.
-    pub fn anim_fn(&self) -> fn(&mut egui::Ui, f32) {
+    pub fn anim_fn(&self) -> AnimFnType {
         self.anim_fn
-    }
-
-    /// Get a mutable reference to the animation function.
-    pub fn anim_fn_mut(&mut self) -> &mut fn(&mut egui::Ui, f32) {
-        &mut self.anim_fn
-    }
-
-    /// Apply the animation function, passing in the given `normal`.
-    pub(super) fn animate<R>(
-        &self,
-        ui: &mut egui::Ui,
-        id: egui::Id,
-        normal: f32,
-        add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R {
-        Self::scope_animation(ui, id, |ui| (self.anim_fn)(ui, normal), add_contents)
     }
 
     /// Create a child [`egui::Ui`] for animation.
@@ -174,7 +156,7 @@ impl AnimationSegment {
         anim_fn: impl FnOnce(&mut egui::Ui),
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
     ) -> R {
-        let layer_id = Self::animation_layer(ui, id);
+        let layer_id = egui::LayerId::new(ui.layer_id().order, id);
         ui.scope_builder(
             egui::UiBuilder::new()
                 .id_salt("animation_scope")
@@ -187,8 +169,20 @@ impl AnimationSegment {
         .inner
     }
 
-    /// Get the animation layer id.
-    pub(crate) fn animation_layer(ui: &mut egui::Ui, id: egui::Id) -> egui::LayerId {
-        egui::LayerId::new(ui.layer_id().order, id)
+    /// Apply the animation function, passing in the given `normal`.
+    pub(super) fn animate<R>(
+        &self,
+        ui: &mut egui::Ui,
+        id: egui::Id,
+        normal: f32,
+        add_contents: impl FnOnce(&mut egui::Ui) -> R,
+    ) -> R {
+        Self::scope_animation(ui, id, |ui| self.anim_fn.tick(ui, normal), add_contents)
+    }
+}
+
+impl Default for AnimationSegment {
+    fn default() -> Self {
+        Self::EMPTY
     }
 }

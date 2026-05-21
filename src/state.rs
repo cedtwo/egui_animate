@@ -38,13 +38,15 @@ use crate::mem;
 /// # });
 /// # });
 /// ```
-pub fn animate<T: 'static + Any + Clone + Send + Sync + Default + PartialEq, R>(
+pub fn animate<T, R>(
     ui: &mut egui::Ui,
     id: impl Into<egui::Id>,
     value: T,
     animation: Animation,
     add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
-) {
+) where
+    T: 'static + Any + Clone + Send + Sync + Default + PartialEq,
+{
     let id: egui::Id = id.into();
 
     let current_time = ui.ctx().input(|input| input.time);

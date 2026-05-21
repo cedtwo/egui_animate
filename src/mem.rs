@@ -1,8 +1,6 @@
 //! Functions that interact with `egui` persistant memory.
 use std::any::Any;
 
-use crate::AnimationSegment;
-
 const START_TIME_SUFFIX: &'static str = "start_time";
 const START_VALUE_SUFFIX: &'static str = "start_value";
 
@@ -47,6 +45,6 @@ pub(super) fn clear_animation_layer(
     ui: &mut egui::Ui,
     id: egui::Id,
 ) -> Option<egui::emath::TSTransform> {
-    let layer_id = AnimationSegment::animation_layer(ui, id);
+    let layer_id = egui::LayerId::new(ui.layer_id().order, id);
     ui.memory_mut(|m| m.to_global.remove(&layer_id))
 }
