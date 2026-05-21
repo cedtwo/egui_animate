@@ -1,9 +1,7 @@
-# egui_animate
-
-## Egui Animate
+# Egui Animate
 Custom animations and transitions.
 
-### Features
+## Features
 
 - *Out*/*in* `egui::Ui` element or variable transitioning.
 - *Out* animations for hiding `egui::Ui` elements or variables.
@@ -11,7 +9,7 @@ Custom animations and transitions.
 - Individual durations for *out*/*in* animation segments.
 - Direct access to a scoped `&mut egui::Ui` for custom animations.
 
-### Functionality
+## Functionality
 
 `egui_animate` offers simple, customizable animations based on state variables.
 Define transitioning or individual *out*/*in* animations for entire ui interfaces,
@@ -19,7 +17,7 @@ and/or individual variables. Animations can be customized by providing your own
 `fn(&mut egui::Ui, f32)` definitions that mutate a scoped `egui::Ui`. See the
 example project for common animations/transitions.
 
-### Animations
+## Animations
 
 Animations define function(s) that mutate the `egui::Ui` given the normalized
 progression of the animation (segment) between `0.0` and `1.0` (named *normal* in
@@ -123,7 +121,7 @@ animate(
 # });
 ```
 
-### Animation Run State
+## Animation Run State
 
 The animation [`RunState`] provides insight into the current animation segment and
 *normal*. Calling `run_state` will retrieve the state outside of the animations scoped
@@ -165,7 +163,7 @@ animate(
 # });
 ```
 
-### Examples
+## Examples
 
 Name | Description
 ---|---
@@ -177,7 +175,7 @@ Name | Description
 cargo run --example [EXAMPLE]
 ```
 
-### Compatibility
+## Compatibility
 
 egui | egui_animate
 ---|---
