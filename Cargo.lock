@@ -875,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "egui_animate"
-version = "0.2.3"
+version = "0.3.0"
 dependencies = [
  "eframe",
  "egui",

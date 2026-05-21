@@ -179,4 +179,5 @@ cargo run --example [EXAMPLE]
 
 egui | egui_animate
 ---|---
+0.33 | 0.3
 0.32 | 0.2
