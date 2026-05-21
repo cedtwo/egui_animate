@@ -269,8 +269,8 @@ impl ShowcaseApp {
 }
 
 impl eframe::App for ShowcaseApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
             ui.heading("Showcase Example");
             ui.label("This example demonstrates:");
             ui.label("• Animating an entire ui scope");
