@@ -177,4 +177,8 @@ Name | Description
 cargo run --example [EXAMPLE]
 ```
 
-License: MIT OR Apache-2.0
+### Compatibility
+
+egui | egui_animate
+---|---
+0.32 | 0.2
