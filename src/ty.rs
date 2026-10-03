@@ -1,5 +1,5 @@
-/// The implementing type of [`AnimFn`].
-pub(super) type AnimFnType = for<'a> fn(&'a mut egui::Ui, f32);
+/// The [`AnimFn`] pointer type.
+pub(super) type AnimPointer = for<'a> fn(&'a mut egui::Ui, f32);
 
 /// An animation function.
 pub trait AnimFn: Copy {

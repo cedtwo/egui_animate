@@ -1,4 +1,4 @@
-use crate::ty::{AnimFn, AnimFnType};
+use crate::ty::{AnimFn, AnimPointer};
 
 /// An animation defined by out-in [`AnimationSegment`](s).
 ///
@@ -40,20 +40,20 @@ use crate::ty::{AnimFn, AnimFnType};
 /// const FADE_ANIM: Animation = Animation::new(0.2, out_fn, in_fn);
 /// ```
 #[derive(Clone, Copy)]
-pub struct Animation<F0 = AnimFnType, F1 = AnimFnType> {
+pub struct Animation<F0 = AnimPointer, F1 = AnimPointer> {
     /// The segment animating the prior value **out**.
     pub out_seg: AnimationSegment<F0>,
     /// The segment animating the new value **in**.
     pub in_seg: AnimationSegment<F1>,
 }
 
-impl Animation<AnimFnType, AnimFnType> {
+impl Animation<AnimPointer, AnimPointer> {
     /// An empty placeholder animation.
     pub const EMPTY: Self =
         Animation::from_segments(AnimationSegment::EMPTY, AnimationSegment::EMPTY);
 }
 
-impl<F0> Animation<F0, AnimFnType> {
+impl<F0> Animation<F0, AnimPointer> {
     /// Create a new `Animation` with only the *out* segment. Passes the the prior
     /// value to the animation scope for the duration of the `out_fn`.
     pub const fn new_out(duration: f32, out_fn: F0) -> Self {
@@ -64,7 +64,7 @@ impl<F0> Animation<F0, AnimFnType> {
     }
 }
 
-impl<F1> Animation<AnimFnType, F1> {
+impl<F1> Animation<AnimPointer, F1> {
     /// Create a new `Animation` with only the *in* segment. Passes the the mutated
     /// value to the animation scope for the duration of the `in_fn`.
     pub const fn new_in(duration: f32, in_fn: F1) -> Self {
@@ -125,14 +125,14 @@ impl Default for Animation {
 /// const ANIM: Animation = Animation::from_segments(FADE_OUT, FADE_IN);
 /// ```
 #[derive(Clone, Copy)]
-pub struct AnimationSegment<F = AnimFnType> {
+pub struct AnimationSegment<F = AnimPointer> {
     /// The duration of the animation, in seconds.
     pub duration: f32,
     /// The [`Ui`] mutating function for the given `f32` normal.
     pub anim_fn: F,
 }
 
-impl AnimationSegment<AnimFnType> {
+impl AnimationSegment<AnimPointer> {
     /// An empty placeholder animation segment.
     const EMPTY: Self = AnimationSegment {
         duration: 0.0,
@@ -194,7 +194,7 @@ impl<F: AnimFn> AnimationSegment<F> {
     }
 }
 
-impl Default for AnimationSegment<AnimFnType> {
+impl Default for AnimationSegment<AnimPointer> {
     fn default() -> Self {
         Self::EMPTY
     }

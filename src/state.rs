@@ -3,7 +3,7 @@ use std::any::Any;
 use crate::Animation;
 use crate::mem;
 use crate::ty::AnimFn;
-use crate::ty::AnimFnType;
+use crate::ty::AnimPointer;
 
 /// Create an animation that transitions between changes of the given `value`.
 ///
@@ -112,7 +112,7 @@ pub fn run_state(ui: &mut egui::Ui, id: impl Into<egui::Id>, animation: Animatio
 
 /// The current state of an animation. Defines an animation scope, delegating variables
 /// to the currently progressing animation.
-struct AnimationState<F0 = AnimFnType, F1 = AnimFnType> {
+struct AnimationState<F0 = AnimPointer, F1 = AnimPointer> {
     start_time: f64,
     current_time: f64,
 
