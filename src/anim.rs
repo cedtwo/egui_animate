@@ -40,20 +40,44 @@ use crate::ty::{AnimFn, AnimFnType};
 /// const FADE_ANIM: Animation = Animation::new(0.2, out_fn, in_fn);
 /// ```
 #[derive(Clone, Copy)]
-pub struct Animation {
+pub struct Animation<F0 = AnimFnType, F1 = AnimFnType> {
     /// The segment animating the prior value **out**.
-    pub out_seg: AnimationSegment,
+    pub out_seg: AnimationSegment<F0>,
     /// The segment animating the new value **in**.
-    pub in_seg: AnimationSegment,
+    pub in_seg: AnimationSegment<F1>,
 }
 
-impl Animation {
+impl Animation<AnimFnType, AnimFnType> {
     /// An empty placeholder animation.
     pub const EMPTY: Self =
         Animation::from_segments(AnimationSegment::EMPTY, AnimationSegment::EMPTY);
+}
 
+impl<F0> Animation<F0, AnimFnType> {
+    /// Create a new `Animation` with only the *out* segment. Passes the the prior
+    /// value to the animation scope for the duration of the `out_fn`.
+    pub const fn new_out(duration: f32, out_fn: F0) -> Self {
+        let out_seg = AnimationSegment::new(duration, out_fn);
+        let in_seg = AnimationSegment::EMPTY;
+
+        Self { out_seg, in_seg }
+    }
+}
+
+impl<F1> Animation<AnimFnType, F1> {
+    /// Create a new `Animation` with only the *in* segment. Passes the the mutated
+    /// value to the animation scope for the duration of the `in_fn`.
+    pub const fn new_in(duration: f32, in_fn: F1) -> Self {
+        let out_seg = AnimationSegment::EMPTY;
+        let in_seg = AnimationSegment::new(duration, in_fn);
+
+        Self { out_seg, in_seg }
+    }
+}
+
+impl<F0, F1> Animation<F0, F1> {
     /// Create a new `Animation` with the given total `duration`, split over segments.
-    pub const fn new(duration: f32, out_fn: AnimFnType, in_fn: AnimFnType) -> Self {
+    pub const fn new(duration: f32, out_fn: F0, in_fn: F1) -> Self {
         let segment_duration = duration / 2.0;
 
         let out_seg = AnimationSegment::new(segment_duration, out_fn);
@@ -62,26 +86,11 @@ impl Animation {
         Self { out_seg, in_seg }
     }
 
-    /// Create a new `Animation` with only the *out* segment. Passes the the prior
-    /// value to the animation scope for the duration of the `out_fn`.
-    pub const fn new_out(duration: f32, out_fn: AnimFnType) -> Self {
-        let out_seg = AnimationSegment::new(duration, out_fn);
-        let in_seg = AnimationSegment::EMPTY;
-
-        Self { out_seg, in_seg }
-    }
-
-    /// Create a new `Animation` with only the *in* segment. Passes the the mutated
-    /// value to the animation scope for the duration of the `in_fn`.
-    pub const fn new_in(duration: f32, out_fn: AnimFnType) -> Self {
-        let out_seg = AnimationSegment::EMPTY;
-        let in_seg = AnimationSegment::new(duration, out_fn);
-
-        Self { out_seg, in_seg }
-    }
-
     /// Create a new `Animation` from the given [`AnimationSegment`]s.
-    pub const fn from_segments(out_seg: AnimationSegment, in_seg: AnimationSegment) -> Self {
+    pub const fn from_segments(
+        out_seg: AnimationSegment<F0>,
+        in_seg: AnimationSegment<F1>,
+    ) -> Self {
         Self { out_seg, in_seg }
     }
 
@@ -116,22 +125,24 @@ impl Default for Animation {
 /// const ANIM: Animation = Animation::from_segments(FADE_OUT, FADE_IN);
 /// ```
 #[derive(Clone, Copy)]
-pub struct AnimationSegment {
+pub struct AnimationSegment<F = AnimFnType> {
     /// The duration of the animation, in seconds.
     pub duration: f32,
     /// The [`Ui`] mutating function for the given `f32` normal.
-    pub anim_fn: AnimFnType,
+    pub anim_fn: F,
 }
 
-impl AnimationSegment {
+impl AnimationSegment<AnimFnType> {
     /// An empty placeholder animation segment.
     const EMPTY: Self = AnimationSegment {
         duration: 0.0,
         anim_fn: |_, _| {},
     };
+}
 
+impl<F> AnimationSegment<F> {
     /// Create a new `AnimationSegment` from the given `duration` and `animation` function.
-    pub const fn new(duration: f32, anim_fn: AnimFnType) -> Self {
+    pub const fn new(duration: f32, anim_fn: F) -> Self {
         Self { duration, anim_fn }
     }
 
@@ -143,9 +154,11 @@ impl AnimationSegment {
     pub fn duration_mut(&mut self) -> f32 {
         self.duration
     }
+}
 
+impl<F: AnimFn> AnimationSegment<F> {
     /// Get the animation function.
-    pub fn anim_fn(&self) -> AnimFnType {
+    pub fn anim_fn(&self) -> F {
         self.anim_fn
     }
 
@@ -181,7 +194,7 @@ impl AnimationSegment {
     }
 }
 
-impl Default for AnimationSegment {
+impl Default for AnimationSegment<AnimFnType> {
     fn default() -> Self {
         Self::EMPTY
     }

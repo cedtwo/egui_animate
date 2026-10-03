@@ -2,7 +2,7 @@
 pub(super) type AnimFnType = for<'a> fn(&'a mut egui::Ui, f32);
 
 /// An animation function.
-pub(super) trait AnimFn: Copy {
+pub trait AnimFn: Copy {
     /// Run the animation for a single tick.
     fn tick<'a>(self, ui: &'a mut egui::Ui, normal: f32);
 }

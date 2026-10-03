@@ -2,6 +2,8 @@ use std::any::Any;
 
 use crate::Animation;
 use crate::mem;
+use crate::ty::AnimFn;
+use crate::ty::AnimFnType;
 
 /// Create an animation that transitions between changes of the given `value`.
 ///
@@ -38,14 +40,16 @@ use crate::mem;
 /// # });
 /// # });
 /// ```
-pub fn animate<T, R>(
+pub fn animate<T, R, F0, F1>(
     ui: &mut egui::Ui,
     id: impl Into<egui::Id>,
     value: T,
-    animation: Animation,
+    animation: Animation<F0, F1>,
     add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
 ) where
     T: 'static + Any + Clone + Send + Sync + Default + PartialEq,
+    F0: AnimFn,
+    F1: AnimFn,
 {
     let id: egui::Id = id.into();
 
@@ -108,16 +112,16 @@ pub fn run_state(ui: &mut egui::Ui, id: impl Into<egui::Id>, animation: Animatio
 
 /// The current state of an animation. Defines an animation scope, delegating variables
 /// to the currently progressing animation.
-struct AnimationState {
+struct AnimationState<F0 = AnimFnType, F1 = AnimFnType> {
     start_time: f64,
     current_time: f64,
 
-    animation: Animation,
+    animation: Animation<F0, F1>,
 }
 
-impl AnimationState {
+impl<F0, F1> AnimationState<F0, F1> {
     /// Create a new `AnimationState` from the `start_time`, `current_time` and `Animation`.
-    pub const fn new(start_time: f64, current_time: f64, animation: Animation) -> Self {
+    pub const fn new(start_time: f64, current_time: f64, animation: Animation<F0, F1>) -> Self {
         Self {
             start_time,
             current_time,
@@ -196,7 +200,11 @@ impl AnimationState {
         start_value: T,
         current_value: T,
         add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
-    ) -> R {
+    ) -> R
+    where
+        F0: AnimFn,
+        F1: AnimFn,
+    {
         match self.run_state() {
             RunState::OutSeg(normal) => {
                 self.animate_out(ui, id, normal, |ui| add_contents(ui, start_value))
@@ -223,7 +231,10 @@ impl AnimationState {
         id: egui::Id,
         normal: f32,
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R {
+    ) -> R
+    where
+        F0: AnimFn,
+    {
         self.animation.out_seg.animate(ui, id, normal, add_contents)
     }
 
@@ -235,7 +246,10 @@ impl AnimationState {
         id: egui::Id,
         normal: f32,
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R {
+    ) -> R
+    where
+        F1: AnimFn,
+    {
         self.animation.in_seg.animate(ui, id, normal, add_contents)
     }
 
