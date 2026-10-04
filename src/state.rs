@@ -1,9 +1,9 @@
 use std::any::Any;
 
 use crate::Animation;
+use crate::RunState;
 use crate::mem;
 use crate::ty::AnimFn;
-use crate::ty::AnimPointer;
 
 /// Create an animation that transitions between changes of the given `value`.
 ///
@@ -61,10 +61,10 @@ pub fn animate<T, R, F0, F1>(
         true => add_contents(ui, current_value),
         false => {
             let start_time = mem::get_or_insert_start_time(ui, id, current_time);
-            let animation = AnimationState::new(start_time, current_time, animation);
+            let state = AnimationState::new(start_time, current_time);
 
             ui.ctx().request_repaint();
-            animation.animate(ui, id, start_value, current_value, add_contents)
+            animation.animate(ui, id, state, start_value, current_value, add_contents)
         }
     };
 }
@@ -104,185 +104,53 @@ pub fn run_state(ui: &mut egui::Ui, id: impl Into<egui::Id>, animation: Animatio
     match mem::get_start_time(ui, id) {
         Some(start_time) => {
             let current_time = ui.ctx().input(|input| input.time);
-            AnimationState::new(start_time, current_time, animation).run_state()
+            let state = AnimationState::new(start_time, current_time);
+            animation.run_state(state)
         }
         None => Default::default(),
     }
 }
 
-/// The current state of an animation. Defines an animation scope, delegating variables
-/// to the currently progressing animation.
-struct AnimationState<F0 = AnimPointer, F1 = AnimPointer> {
+/// The current state of an animation.
+pub(super) struct AnimationState {
     start_time: f64,
     current_time: f64,
-
-    animation: Animation<F0, F1>,
 }
 
-impl<F0, F1> AnimationState<F0, F1> {
-    /// Create a new `AnimationState` from the `start_time`, `current_time` and `Animation`.
-    pub const fn new(start_time: f64, current_time: f64, animation: Animation<F0, F1>) -> Self {
+impl AnimationState {
+    /// Create a new `AnimationState` from the `start_time` and `current_time`.
+    pub const fn new(start_time: f64, current_time: f64) -> Self {
         Self {
             start_time,
             current_time,
-            animation,
         }
     }
 
-    /// Get the **out** segment duration.
+    /// Get animation start time.
     #[inline]
-    fn out_dur(&self) -> f32 {
-        self.animation.out_seg.duration
-    }
-
-    /// Get the **out** segment start time.
-    #[inline]
-    fn out_start(&self) -> f64 {
+    pub(super) fn start(&self) -> f64 {
         self.start_time
     }
 
-    /// Get the **out** segment end time.
-    #[inline]
-    fn out_end(&self) -> f64 {
-        self.out_start() + self.out_dur() as f64
+    /// Get the elapsed time. Returns `Some(0.0)` if the animation has yet to begin, and `None` if
+    /// the animation has finished.
+    pub(super) fn elapsed(&self, duration: f64) -> Option<f32> {
+        let elapsed = (self.current_time - self.start()).max(0.0);
+        (elapsed < duration).then_some(elapsed as f32)
     }
 
-    /// Get the elapsed time of the **out** segment. Returns `Some(0.0)` if the animation
-    /// has yet to begin, and `None` if the animation has finished.
-    fn out_elapsed(&self) -> Option<f32> {
-        let out_elapsed = (self.current_time - self.out_start()).max(0.0) as f32;
-        (out_elapsed < self.out_dur()).then_some(out_elapsed)
+    /// Get the elapsed normal. Returns `Some(0.0)` if the animation has yet to begin, and `None` if
+    /// the animation has finished.
+    pub(super) fn elapsed_normal(&self, duration: f64) -> Option<f32> {
+        self.elapsed(duration)
+            .map(|elapsed| elapsed / duration as f32)
     }
 
-    /// Get the elapsed normal of the **out** segment. Returns `Some(0.0)` if the animation
-    /// has yet to begin, and `None` if the animation has finished.
-    fn out_elapsed_normal(&self) -> Option<f32> {
-        self.out_elapsed().map(|elapsed| elapsed / self.out_dur())
-    }
-
-    /// Get the **in** segment duration.
-    #[inline]
-    fn in_dur(&self) -> f32 {
-        self.animation.in_seg.duration
-    }
-
-    /// Get the **in** segment start time.
-    #[inline]
-    fn in_start(&self) -> f64 {
-        self.out_end()
-    }
-
-    /// Get the **in** segment end time.
-    #[allow(dead_code)]
-    #[inline]
-    fn in_end(&self) -> f64 {
-        self.in_start() + self.in_dur() as f64
-    }
-
-    /// Get the elapsed time of the **in** segment. Returns `Some(0.0)` if the animation
-    /// has yet to begin, and `None` if the animation has finished.
-    fn in_elapsed(&self) -> Option<f32> {
-        let in_elapsed = (self.current_time - self.in_start()).max(0.0) as f32;
-        (in_elapsed < self.in_dur()).then_some(in_elapsed)
-    }
-
-    /// Get the elapsed normal of the **in** segment. Returns `Some(0.0)` if the animation
-    /// has yet to begin, and `None` if the animation has finished.
-    fn in_elapsed_normal(&self) -> Option<f32> {
-        self.in_elapsed().map(|elapsed| elapsed / self.in_dur())
-    }
-
-    /// Call the `AnimationSegment` for the current frame.
-    fn animate<T: 'static + Any + Clone + Send + Sync + Default, R>(
-        &self,
-        ui: &mut egui::Ui,
-        id: egui::Id,
-        start_value: T,
-        current_value: T,
-        add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
-    ) -> R
-    where
-        F0: AnimFn,
-        F1: AnimFn,
-    {
-        match self.run_state() {
-            RunState::OutSeg(normal) => {
-                self.animate_out(ui, id, normal, |ui| add_contents(ui, start_value))
-            }
-            RunState::InSeg(normal) => {
-                mem::clear_animation_layer(ui, id);
-                self.animate_in(ui, id, normal, |ui| add_contents(ui, current_value))
-            }
-            RunState::None => {
-                mem::clear_start_value::<T>(ui, id);
-                mem::clear_start_time(ui, id);
-                mem::clear_animation_layer(ui, id);
-
-                add_contents(ui, current_value)
-            }
-        }
-    }
-
-    /// Delegate to the **out** segment [`AnimationSegment::animate`] fn.
-    #[inline]
-    fn animate_out<R>(
-        &self,
-        ui: &mut egui::Ui,
-        id: egui::Id,
-        normal: f32,
-        add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R
-    where
-        F0: AnimFn,
-    {
-        self.animation.out_seg.animate(ui, id, normal, add_contents)
-    }
-
-    /// Delegate to the **in** segment [`AnimationSegment::animate`] fn.
-    #[inline]
-    fn animate_in<R>(
-        &self,
-        ui: &mut egui::Ui,
-        id: egui::Id,
-        normal: f32,
-        add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R
-    where
-        F1: AnimFn,
-    {
-        self.animation.in_seg.animate(ui, id, normal, add_contents)
-    }
-
-    /// Get the `RunState` for the current frame.
-    fn run_state(&self) -> RunState {
-        if let Some(normal) = self.out_elapsed_normal() {
-            RunState::OutSeg(normal)
-        } else if let Some(normal) = self.in_elapsed_normal() {
-            RunState::InSeg(normal)
-        } else {
-            RunState::None
-        }
-    }
-}
-
-/// An identified animation segment and *normal*.
-#[derive(Debug, Default, PartialEq, PartialOrd)]
-pub enum RunState {
-    /// The *out* animation segment normal.
-    OutSeg(f32),
-    /// The *in* animation segment normal.
-    InSeg(f32),
-    /// The animation is not currently running.
-    #[default]
-    None,
-}
-
-impl RunState {
-    /// Returns `true` if the animation is in either the *out* or *in* state.
-    pub fn is_running(&self) -> bool {
-        match self {
-            RunState::OutSeg(_) | RunState::InSeg(_) => true,
-            RunState::None => false,
+    /// Offset the animation start time by the given amount.
+    pub(super) fn offset(&self, offset: f64) -> Self {
+        Self {
+            start_time: self.start_time + offset,
+            current_time: self.current_time,
         }
     }
 }
@@ -294,85 +162,32 @@ mod tests {
     mod animation_state {
         use super::*;
 
-        const TEST_ANIM_STATE: AnimationState = AnimationState::new(
-            1.0,
-            1.0,
-            Animation {
-                out_seg: crate::AnimationSegment {
-                    duration: 1.5,
-                    anim_fn: |_, _| {},
-                },
-                in_seg: crate::AnimationSegment {
-                    duration: 1.5,
-                    anim_fn: |_, _| {},
-                },
-            },
-        );
+        const TEST_ANIM_STATE: AnimationState = AnimationState::new(1.0, 1.0);
 
         #[test]
-        fn test_out_end() {
-            let state = TEST_ANIM_STATE;
-            assert_eq!(state.out_end(), 2.5);
-        }
-
-        #[test]
-        fn test_out_elapsed() {
+        fn test_elapsed() {
             let mut state = TEST_ANIM_STATE;
 
-            assert_eq!(state.out_elapsed(), Some(0.0));
+            assert_eq!(state.elapsed(1.0), Some(0.0));
+            state.current_time = 1.5;
+            assert_eq!(state.elapsed(1.0), Some(0.5));
             state.current_time = 2.0;
-            assert_eq!(state.out_elapsed(), Some(1.0));
+            assert_eq!(state.elapsed(1.0), None);
             state.current_time = 3.0;
-            assert_eq!(state.out_elapsed(), None);
-            state.current_time = 4.0;
-            assert_eq!(state.out_elapsed(), None);
+            assert_eq!(state.elapsed(1.0), None);
         }
+
         #[test]
-        fn test_out_elapsed_normal() {
+        fn test_elapsed_normal() {
             let mut state = TEST_ANIM_STATE;
 
-            assert_eq!(state.out_elapsed_normal(), Some(0.0));
+            assert_eq!(state.elapsed_normal(1.0), Some(0.0));
             state.current_time = 1.75;
-            assert_eq!(state.out_elapsed_normal(), Some(0.5));
+            assert_eq!(state.elapsed_normal(1.0), Some(0.75));
             state.current_time = 3.0;
-            assert_eq!(state.out_elapsed_normal(), None);
+            assert_eq!(state.elapsed_normal(1.0), None);
             state.current_time = 4.0;
-            assert_eq!(state.out_elapsed_normal(), None);
-        }
-
-        #[test]
-        fn test_in_end() {
-            let state = TEST_ANIM_STATE;
-            assert_eq!(state.in_end(), 4.0);
-        }
-
-        #[test]
-        fn test_in_elapsed() {
-            let mut state = TEST_ANIM_STATE;
-
-            assert_eq!(state.in_elapsed(), Some(0.0));
-            state.current_time = 2.0;
-            assert_eq!(state.in_elapsed(), Some(0.0));
-            state.current_time = 3.0;
-            assert_eq!(state.in_elapsed(), Some(0.5));
-            state.current_time = 4.0;
-            assert_eq!(state.in_elapsed(), None);
-            state.current_time = 5.0;
-            assert_eq!(state.in_elapsed(), None);
-        }
-        #[test]
-        fn test_in_elapsed_normal() {
-            let mut state = TEST_ANIM_STATE;
-
-            assert_eq!(state.in_elapsed_normal(), Some(0.0));
-            state.current_time = 2.0;
-            assert_eq!(state.in_elapsed_normal(), Some(0.0));
-            state.current_time = 3.25;
-            assert_eq!(state.in_elapsed_normal(), Some(0.5));
-            state.current_time = 4.0;
-            assert_eq!(state.in_elapsed_normal(), None);
-            state.current_time = 5.0;
-            assert_eq!(state.in_elapsed_normal(), None);
+            assert_eq!(state.elapsed_normal(1.0), None);
         }
     }
 }

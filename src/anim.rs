@@ -1,4 +1,10 @@
-use crate::ty::{AnimFn, AnimPointer};
+use std::any::Any;
+
+use crate::{
+    mem,
+    state::AnimationState,
+    ty::{AnimFn, AnimPointer},
+};
 
 /// An animation defined by out-in [`AnimationSegment`](s).
 ///
@@ -94,9 +100,97 @@ impl<F0, F1> Animation<F0, F1> {
         Self { out_seg, in_seg }
     }
 
+    /// Get the **out** segment duration.
+    #[inline]
+    fn out_dur(&self) -> f32 {
+        self.out_seg.duration
+    }
+
+    /// Get the **in** segment duration.
+    #[inline]
+    fn in_dur(&self) -> f32 {
+        self.in_seg.duration
+    }
+
     /// Get the total duration of the animation.
     pub const fn duration(&self) -> f32 {
         self.out_seg.duration + self.in_seg.duration
+    }
+
+    /// Get the `RunState` for the current frame.
+    pub(super) fn run_state(&self, state: AnimationState) -> RunState {
+        if let Some(normal) = state.elapsed_normal(self.out_dur() as f64) {
+            RunState::OutSeg(normal)
+        } else if let Some(normal) = state
+            .offset(self.out_dur() as f64)
+            .elapsed_normal(self.in_dur() as f64)
+        {
+            RunState::InSeg(normal)
+        } else {
+            RunState::None
+        }
+    }
+
+    /// Call the `AnimationSegment` for the current frame.
+    pub(super) fn animate<T: 'static + Any + Clone + Send + Sync + Default, R>(
+        &self,
+        ui: &mut egui::Ui,
+        id: egui::Id,
+        state: AnimationState,
+        start_value: T,
+        current_value: T,
+        add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
+    ) -> R
+    where
+        F0: AnimFn,
+        F1: AnimFn,
+    {
+        match self.run_state(state) {
+            RunState::OutSeg(normal) => {
+                self.animate_out(ui, id, normal, |ui| add_contents(ui, start_value))
+            }
+            RunState::InSeg(normal) => {
+                mem::clear_animation_layer(ui, id);
+                self.animate_in(ui, id, normal, |ui| add_contents(ui, current_value))
+            }
+            RunState::None => {
+                mem::clear_start_value::<T>(ui, id);
+                mem::clear_start_time(ui, id);
+                mem::clear_animation_layer(ui, id);
+
+                add_contents(ui, current_value)
+            }
+        }
+    }
+
+    /// Delegate to the **out** segment [`AnimationSegment::animate`] fn.
+    #[inline]
+    fn animate_out<R>(
+        &self,
+        ui: &mut egui::Ui,
+        id: egui::Id,
+        normal: f32,
+        add_contents: impl FnOnce(&mut egui::Ui) -> R,
+    ) -> R
+    where
+        F0: AnimFn,
+    {
+        self.out_seg.animate(ui, id, normal, add_contents)
+    }
+
+    /// Delegate to the **in** segment [`AnimationSegment::animate`] fn.
+    #[inline]
+    fn animate_in<R>(
+        &self,
+        ui: &mut egui::Ui,
+        id: egui::Id,
+        normal: f32,
+        add_contents: impl FnOnce(&mut egui::Ui) -> R,
+    ) -> R
+    where
+        F1: AnimFn,
+    {
+        self.in_seg.animate(ui, id, normal, add_contents)
     }
 }
 
@@ -197,5 +291,27 @@ impl<F: AnimFn> AnimationSegment<F> {
 impl Default for AnimationSegment<AnimPointer> {
     fn default() -> Self {
         Self::EMPTY
+    }
+}
+
+/// An identified animation segment and *normal*.
+#[derive(Debug, Default, PartialEq, PartialOrd)]
+pub enum RunState {
+    /// The *out* animation segment normal.
+    OutSeg(f32),
+    /// The *in* animation segment normal.
+    InSeg(f32),
+    /// The animation is not currently running.
+    #[default]
+    None,
+}
+
+impl RunState {
+    /// Returns `true` if the animation is in either the *out* or *in* state.
+    pub fn is_running(&self) -> bool {
+        match self {
+            RunState::OutSeg(_) | RunState::InSeg(_) => true,
+            RunState::None => false,
+        }
     }
 }

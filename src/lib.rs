@@ -5,5 +5,5 @@ mod ty;
 mod anim;
 mod state;
 
-pub use anim::{Animation, AnimationSegment};
-pub use state::{RunState, animate, run_state};
+pub use anim::{Animation, AnimationSegment, RunState};
+pub use state::{animate, run_state};
