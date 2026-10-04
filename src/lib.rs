@@ -2,11 +2,12 @@
 mod mem;
 mod ty;
 
-mod segment;
-
 mod anim;
+mod segment;
 mod state;
 
+mod ops;
+
 pub use anim::{Animation, RunState};
+pub use ops::{animate, run_state};
 pub use segment::AnimationSegment;
-pub use state::{animate, run_state};
