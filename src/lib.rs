@@ -3,6 +3,7 @@ mod mem;
 mod ty;
 
 mod anim;
+mod animate;
 mod segment;
 mod state;
 

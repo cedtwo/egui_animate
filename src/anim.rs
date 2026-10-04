@@ -1,5 +1,6 @@
 use std::any::Any;
 
+use crate::animate::Animate;
 use crate::mem;
 use crate::segment::AnimationSegment;
 use crate::state::{AnimProgress, AnimValues};
@@ -116,51 +117,6 @@ impl<F0, F1> Animation<F0, F1> {
         self.out_seg.duration + self.in_seg.duration
     }
 
-    /// Get the `RunState` for the current frame.
-    pub(super) fn run_state(&self, progress: AnimProgress) -> RunState {
-        if let Some(normal) = progress.elapsed_normal(self.out_dur() as f64) {
-            RunState::OutSeg(normal)
-        } else if let Some(normal) = progress
-            .offset(self.out_dur() as f64)
-            .elapsed_normal(self.in_dur() as f64)
-        {
-            RunState::InSeg(normal)
-        } else {
-            RunState::None
-        }
-    }
-
-    /// Call the `AnimationSegment` for the current frame.
-    pub(super) fn animate<T: 'static + Any + Clone + Send + Sync + Default, R>(
-        &self,
-        ui: &mut egui::Ui,
-        id: egui::Id,
-        progress: AnimProgress,
-        vars: AnimValues<T>,
-        add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
-    ) -> R
-    where
-        F0: AnimFn,
-        F1: AnimFn,
-    {
-        match self.run_state(progress) {
-            RunState::OutSeg(normal) => {
-                self.animate_out(ui, id, normal, |ui| add_contents(ui, vars.start_value()))
-            }
-            RunState::InSeg(normal) => {
-                mem::clear_animation_layer(ui, id);
-                self.animate_in(ui, id, normal, |ui| add_contents(ui, vars.current_value()))
-            }
-            RunState::None => {
-                mem::clear_start_value::<T>(ui, id);
-                mem::clear_start_time(ui, id);
-                mem::clear_animation_layer(ui, id);
-
-                add_contents(ui, vars.current_value())
-            }
-        }
-    }
-
     /// Delegate to the **out** segment [`AnimationSegment::animate`] fn.
     #[inline]
     fn animate_out<R>(
@@ -189,6 +145,49 @@ impl<F0, F1> Animation<F0, F1> {
         F1: AnimFn,
     {
         self.in_seg.animate(ui, id, normal, add_contents)
+    }
+}
+
+impl<F0: AnimFn, F1: AnimFn> Animate for Animation<F0, F1> {
+    type RunState = RunState;
+
+    fn run_state(&self, progress: AnimProgress) -> Self::RunState {
+        if let Some(normal) = progress.elapsed_normal(self.out_dur() as f64) {
+            RunState::OutSeg(normal)
+        } else if let Some(normal) = progress
+            .offset(self.out_dur() as f64)
+            .elapsed_normal(self.in_dur() as f64)
+        {
+            RunState::InSeg(normal)
+        } else {
+            RunState::None
+        }
+    }
+
+    fn animate<T: 'static + Any + Clone + Send + Sync + Default, R>(
+        &self,
+        ui: &mut egui::Ui,
+        id: egui::Id,
+        progress: AnimProgress,
+        vars: AnimValues<T>,
+        add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
+    ) -> R {
+        match self.run_state(progress) {
+            RunState::OutSeg(normal) => {
+                self.animate_out(ui, id, normal, |ui| add_contents(ui, vars.start_value()))
+            }
+            RunState::InSeg(normal) => {
+                mem::clear_animation_layer(ui, id);
+                self.animate_in(ui, id, normal, |ui| add_contents(ui, vars.current_value()))
+            }
+            RunState::None => {
+                mem::clear_start_value::<T>(ui, id);
+                mem::clear_start_time(ui, id);
+                mem::clear_animation_layer(ui, id);
+
+                add_contents(ui, vars.current_value())
+            }
+        }
     }
 }
 

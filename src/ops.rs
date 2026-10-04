@@ -2,10 +2,10 @@ use std::any::Any;
 
 use crate::Animation;
 use crate::RunState;
+use crate::animate::Animate;
 use crate::mem;
-use crate::state::AnimValues;
 use crate::state::AnimProgress;
-use crate::ty::AnimFn;
+use crate::state::AnimValues;
 
 /// Create an animation that transitions between changes of the given `value`.
 ///
@@ -42,16 +42,15 @@ use crate::ty::AnimFn;
 /// # });
 /// # });
 /// ```
-pub fn animate<T, R, F0, F1>(
+pub fn animate<T, R, A>(
     ui: &mut egui::Ui,
     id: impl Into<egui::Id>,
     value: T,
-    animation: Animation<F0, F1>,
+    anim: A,
     add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
 ) where
     T: 'static + Any + Clone + Send + Sync + Default + PartialEq,
-    F0: AnimFn,
-    F1: AnimFn,
+    A: Animate,
 {
     let id: egui::Id = id.into();
 
@@ -67,7 +66,7 @@ pub fn animate<T, R, F0, F1>(
             let vars = AnimValues::new(start_value, current_value);
 
             ui.ctx().request_repaint();
-            animation.animate(ui, id, state, vars, add_contents)
+            anim.animate(ui, id, state, vars, add_contents)
         }
     };
 }

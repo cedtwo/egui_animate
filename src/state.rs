@@ -1,5 +1,5 @@
 /// The current progress of an animation.
-pub(super) struct AnimProgress {
+pub struct AnimProgress {
     start_time: f64,
     current_time: f64,
 }
@@ -43,7 +43,7 @@ impl AnimProgress {
 }
 
 /// Animation state values.
-pub(super) struct AnimValues<T> {
+pub struct AnimValues<T> {
     start_val: T,
     current_val: T,
 }
