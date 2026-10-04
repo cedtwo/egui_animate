@@ -1,7 +1,5 @@
 use std::any::Any;
 
-use crate::Animation;
-use crate::RunState;
 use crate::animate::Animate;
 use crate::mem;
 use crate::state::AnimProgress;
@@ -100,7 +98,11 @@ pub fn animate<T, R, A>(
 /// # });
 /// # });
 /// ```
-pub fn run_state(ui: &mut egui::Ui, id: impl Into<egui::Id>, animation: Animation) -> RunState {
+pub fn run_state<A: Animate>(
+    ui: &mut egui::Ui,
+    id: impl Into<egui::Id>,
+    animation: A,
+) -> A::RunState {
     let id: egui::Id = id.into();
 
     match mem::get_start_time(ui, id) {
