@@ -120,8 +120,8 @@ impl<S, F0, F1> Animation<S, F0, F1> {
         self.in_seg.duration
     }
 
-    /// Get the total duration of the animation.
-    pub const fn duration(&self) -> f32 {
+    /// Get sum duration of both animation segments.
+    pub const fn sum_dur(&self) -> f32 {
         self.out_seg.duration + self.in_seg.duration
     }
 }
