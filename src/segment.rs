@@ -54,12 +54,13 @@ impl<F> AnimationSegment<F>
 where
     F: Fn(&mut egui::Ui, f32),
 {
-    /// Create a child [`egui::Ui`] for animation.
-    fn scope_animation<R>(
+    /// Call the animation function in a child [`egui::Ui`] animation scope.
+    pub(super) fn animate_scoped<R>(
+        &self,
         ui: &mut egui::Ui,
         id: egui::Id,
         rect: egui::Rect,
-        anim_fn: impl FnOnce(&mut egui::Ui),
+        normal: f32,
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
     ) -> R {
         let layer_id = egui::LayerId::new(ui.layer_id().order, id);
@@ -69,23 +70,11 @@ where
                 .max_rect(rect)
                 .layer_id(layer_id),
             |ui| {
-                anim_fn(ui);
+                (|ui| (self.anim_fn)(ui, normal))(ui);
                 add_contents(ui)
             },
         )
         .inner
-    }
-
-    /// Apply the animation function, passing in the given `normal`.
-    pub(super) fn animate_scoped<R>(
-        &self,
-        ui: &mut egui::Ui,
-        id: egui::Id,
-        rect: egui::Rect,
-        normal: f32,
-        add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R {
-        Self::scope_animation(ui, id, rect, |ui| (self.anim_fn)(ui, normal), add_contents)
     }
 }
 
