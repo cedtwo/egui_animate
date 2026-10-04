@@ -5,7 +5,7 @@ pub struct AnimProgress {
 }
 
 impl AnimProgress {
-    /// Create `AnimProgress` from starting and current time.
+    /// Create a new `AnimProgress` from a starting and current time.
     pub(super) const fn new(start_time: f64, current_time: f64) -> Self {
         Self {
             start_time,
@@ -49,7 +49,7 @@ pub struct AnimValues<T> {
 }
 
 impl<T> AnimValues<T> {
-    /// Create `AnimVars` from the a starting and current value.
+    /// Create a new `AnimVars` from the a starting and current value.
     pub(super) const fn new(start_val: T, current_val: T) -> Self {
         Self {
             start_val,
