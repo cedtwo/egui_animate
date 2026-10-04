@@ -3,8 +3,9 @@ pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 
 /// A single segment of the animation.
 ///
-/// Defines the `duration` of a segment (in seconds), and a mutating function for
-/// the [`Ui`]. See [`Animation`] for details on how to construct an animation function.
+/// Defines the `duration` of a segment (in seconds), and a mutating function for the
+/// [`Ui`](egui::Ui). See [`Animation`](crate::Animation) for details on how to construct an
+/// animation function.
 ///
 /// # Example
 /// ```
@@ -20,12 +21,12 @@ pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 pub struct AnimationSegment<F = AnimFn> {
     /// The duration of the animation, in seconds.
     pub duration: f32,
-    /// The [`Ui`] mutating function for the given `f32` normal.
+    /// The [`Ui`](egui::Ui) mutating function for the given `f32` normal.
     pub anim_fn: F,
 }
 
 impl AnimationSegment<AnimFn> {
-    /// An empty placeholder animation segment.
+    /// An empty animation segment.
     pub(super) const EMPTY: Self = AnimationSegment {
         duration: 0.0,
         anim_fn: |_, _| {},
@@ -33,7 +34,7 @@ impl AnimationSegment<AnimFn> {
 }
 
 impl<F> AnimationSegment<F> {
-    /// Create a new `AnimationSegment` from the given `duration` and `animation` function.
+    /// Create a new `AnimationSegment` from the given `duration` and animation function.
     pub const fn new(duration: f32, anim_fn: F) -> Self {
         Self { duration, anim_fn }
     }
@@ -43,8 +44,9 @@ impl<F> AnimationSegment<F> {
         self.duration
     }
 
-    pub fn duration_mut(&mut self) -> f32 {
-        self.duration
+    /// Get a new animation duration.
+    pub fn set_duration(&mut self, duration: f32) {
+        self.duration = duration;
     }
 }
 
