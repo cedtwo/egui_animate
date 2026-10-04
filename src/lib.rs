@@ -1,6 +1,5 @@
 #![doc = include_str!("../README.md")]
 mod mem;
-mod ty;
 
 mod animate;
 mod schedule;

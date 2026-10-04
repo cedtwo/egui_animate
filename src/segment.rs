@@ -1,4 +1,5 @@
-use crate::ty::AnimPointer;
+/// The animation function pointer type.
+pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 
 /// A single segment of the animation.
 ///
@@ -16,14 +17,14 @@ use crate::ty::AnimPointer;
 /// const ANIM: Animation = Animation::from_segments(FADE_OUT, FADE_IN);
 /// ```
 #[derive(Clone, Copy)]
-pub struct AnimationSegment<F = AnimPointer> {
+pub struct AnimationSegment<F = AnimFn> {
     /// The duration of the animation, in seconds.
     pub duration: f32,
     /// The [`Ui`] mutating function for the given `f32` normal.
     pub anim_fn: F,
 }
 
-impl AnimationSegment<AnimPointer> {
+impl AnimationSegment<AnimFn> {
     /// An empty placeholder animation segment.
     pub(super) const EMPTY: Self = AnimationSegment {
         duration: 0.0,
@@ -86,7 +87,7 @@ where
     }
 }
 
-impl Default for AnimationSegment<AnimPointer> {
+impl Default for AnimationSegment<AnimFn> {
     fn default() -> Self {
         Self::EMPTY
     }

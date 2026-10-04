@@ -4,9 +4,8 @@ use std::marker::PhantomData;
 use crate::animate::Animate;
 use crate::mem;
 use crate::schedule::{Layer, Sequence};
-use crate::segment::AnimationSegment;
+use crate::segment::{AnimFn, AnimationSegment};
 use crate::state::{AnimProgress, AnimValues};
-use crate::ty::AnimPointer;
 
 /// An animation defined by out-in [`AnimationSegment`](s).
 ///
@@ -48,7 +47,7 @@ use crate::ty::AnimPointer;
 /// const FADE_ANIM: Animation = Animation::new(0.2, out_fn, in_fn);
 /// ```
 #[derive(Clone, Copy)]
-pub struct Animation<S = Sequence, F0 = AnimPointer, F1 = AnimPointer> {
+pub struct Animation<S = Sequence, F0 = AnimFn, F1 = AnimFn> {
     /// The segment animating the prior value **out**.
     pub out_seg: AnimationSegment<F0>,
     /// The segment animating the new value **in**.
@@ -57,13 +56,13 @@ pub struct Animation<S = Sequence, F0 = AnimPointer, F1 = AnimPointer> {
     pub _schedule: PhantomData<S>,
 }
 
-impl<S> Animation<S, AnimPointer, AnimPointer> {
+impl<S> Animation<S, AnimFn, AnimFn> {
     /// An empty placeholder animation.
     pub const EMPTY: Self =
         Animation::from_segments(AnimationSegment::EMPTY, AnimationSegment::EMPTY);
 }
 
-impl<F0> Animation<Sequence, F0, AnimPointer> {
+impl<F0> Animation<Sequence, F0, AnimFn> {
     /// Create a new `Animation` with only the *out* segment. Passes the the prior
     /// value to the animation scope for the duration of the `out_fn`.
     pub const fn new_out(duration: f32, out_fn: F0) -> Self {
@@ -78,7 +77,7 @@ impl<F0> Animation<Sequence, F0, AnimPointer> {
     }
 }
 
-impl<F1> Animation<Sequence, AnimPointer, F1> {
+impl<F1> Animation<Sequence, AnimFn, F1> {
     /// Create a new `Animation` with only the *in* segment. Passes the the mutated
     /// value to the animation scope for the duration of the `in_fn`.
     pub const fn new_in(duration: f32, in_fn: F1) -> Self {
