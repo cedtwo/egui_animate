@@ -229,7 +229,10 @@ where
     fn run_state(&self, progress: AnimProgress) -> Self::RunState {
         match (
             progress.elapsed_normal(self.out_dur() as f64),
-            progress.elapsed_normal(self.in_dur() as f64),
+            progress
+                // Offset progress so both animations end at the same time.
+                .offset((self.out_dur() - self.in_dur()).max(0.0) as f64)
+                .elapsed_normal(self.in_dur() as f64),
         ) {
             (Some(out_norm), Some(in_norm)) => LayerRunState::Running { out_norm, in_norm },
             (Some(out_norm), None) => LayerRunState::Running {
