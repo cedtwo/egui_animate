@@ -7,11 +7,17 @@ use crate::schedule::{Layer, Sequence};
 use crate::segment::{AnimFn, AnimationSegment};
 use crate::state::{AnimProgress, AnimValues};
 
-/// An animation defined by out-in [`AnimationSegment`](s).
+/// An animation defined by [`AnimationSegment`]\(s).
 ///
-/// An animation must include either an *out* function, an *in* function, or both.
-/// Single function animations may be suitable for displaying or hiding elements,
-/// while out/in animations simplify transitions.
+/// An animation must include either an *out* function, an *in* function, or both. Single function
+/// animations may be suitable for displaying or hiding elements, while out/in animations simplify
+/// transitions.
+///
+/// # Animation Functions
+///
+/// Animation functions recieve a *normal*, representing the linear relative progress (`0.0` to
+/// `1.0`) of an animation segment. This can be passed to easing functions for smoother animations,
+/// and often reversed to reverse a previously defined animation.
 ///
 /// ## Example
 /// ```
@@ -24,28 +30,11 @@ use crate::state::{AnimProgress, AnimValues};
 /// );
 /// ```
 ///
-/// # Defining animation functions
+/// # Animation Scheduling
 ///
-/// Mutating functions recieve a *normal*, representing the linear relative
-/// progress (`0.0` to `1.0`) of the animation segment. This can be passed to
-/// easing functions for smoother animations, and often reversed to reverse a
-/// previously defined animation.
-///
-/// ```
-/// # use egui_animate::Animation;
-/// fn out_fn(ui: &mut egui::Ui, normal: f32) {
-///     // Reverse the normal (1.0 to 0.0 progression), and pass to the `in_fn`.
-///     in_fn(ui, 1.0 - normal);
-/// };
-/// fn in_fn(ui: &mut egui::Ui, normal: f32) {
-///     // Apply easing to the normal.
-///     let normal = egui::emath::easing::quadratic_out(normal);
-///     // Fade in, progressing from 0.0 to 1.0.
-///     ui.set_opacity(normal);
-/// };
-///
-/// const FADE_ANIM: Animation = Animation::new(0.2, out_fn, in_fn);
-/// ```
+/// `Animation` supports running each segment sequentially or at the same time by passing either
+/// [`Sequence`] or [`Layer`] as the first generic argument `S`. See the respective documentation of
+/// each marker type for more.
 #[derive(Clone, Copy)]
 pub struct Animation<S = Sequence, F0 = AnimFn, F1 = AnimFn> {
     /// The segment animating the prior value **out**.
@@ -63,8 +52,8 @@ impl<S> Animation<S, AnimFn, AnimFn> {
 }
 
 impl<F0> Animation<Sequence, F0, AnimFn> {
-    /// Create a new `Animation` with only the *out* segment. Passes the the prior
-    /// value to the animation scope for the duration of the `out_fn`.
+    /// Create a new `Animation` with only the *out* segment. Passes the the prior value to the
+    /// animation scope for the duration of the `out_fn`.
     pub const fn new_out(duration: f32, out_fn: F0) -> Self {
         let out_seg = AnimationSegment::new(duration, out_fn);
         let in_seg = AnimationSegment::EMPTY;
@@ -78,8 +67,8 @@ impl<F0> Animation<Sequence, F0, AnimFn> {
 }
 
 impl<F1> Animation<Sequence, AnimFn, F1> {
-    /// Create a new `Animation` with only the *in* segment. Passes the the mutated
-    /// value to the animation scope for the duration of the `in_fn`.
+    /// Create a new `Animation` with only the *in* segment. Passes the the mutated value to the
+    /// animation scope for the duration of the `in_fn`.
     pub const fn new_in(duration: f32, in_fn: F1) -> Self {
         let out_seg = AnimationSegment::EMPTY;
         let in_seg = AnimationSegment::new(duration, in_fn);
@@ -119,13 +108,13 @@ impl<S, F0, F1> Animation<S, F0, F1> {
         }
     }
 
-    /// Get the **out** segment duration.
+    /// Get the *out* segment duration.
     #[inline]
     fn out_dur(&self) -> f32 {
         self.out_seg.duration
     }
 
-    /// Get the **in** segment duration.
+    /// Get the *in* segment duration.
     #[inline]
     fn in_dur(&self) -> f32 {
         self.in_seg.duration
@@ -138,7 +127,7 @@ impl<S, F0, F1> Animation<S, F0, F1> {
 }
 
 impl<S, F0, F1> Animation<S, F0, F1> {
-    /// Delegate to the **out** segment [`AnimationSegment::animate`] fn.
+    /// Call the *out* [`AnimationSegment`] function.
     #[inline]
     fn animate_out<R>(
         &self,
@@ -155,7 +144,7 @@ impl<S, F0, F1> Animation<S, F0, F1> {
             .animate_scoped(ui, id, rect, normal, add_contents)
     }
 
-    /// Delegate to the **in** segment [`AnimationSegment::animate`] fn.
+    /// Call the *in* [`AnimationSegment`] function.
     #[inline]
     fn animate_in<R>(
         &self,
@@ -297,7 +286,7 @@ impl<S> Default for Animation<S> {
     }
 }
 
-/// Identifies animation progression and *normal* for an [`Animation`].
+/// Identifies animation progression and *normal* for a sequential [`Sequence`] [`Animation`].
 #[derive(Debug, Default, PartialEq, PartialOrd)]
 pub enum SequenceRunState {
     /// The *out* animation segment normal.
@@ -319,7 +308,7 @@ impl SequenceRunState {
     }
 }
 
-/// Identifies animation progression and *normal* for an [`Animation`].
+/// Identifies animation progression and *normal* for a simultaneous [`Layer`] [`Animation`].
 #[derive(Debug, Default, PartialEq, PartialOrd)]
 pub enum LayerRunState {
     /// One or both segments of the animation are still running.
