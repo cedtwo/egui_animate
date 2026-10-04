@@ -6,7 +6,7 @@ pub(super) struct AnimationState {
 
 impl AnimationState {
     /// Create a new `AnimationState` from the `start_time` and `current_time`.
-    pub const fn new(start_time: f64, current_time: f64) -> Self {
+    pub(super) const fn new(start_time: f64, current_time: f64) -> Self {
         Self {
             start_time,
             current_time,
@@ -15,7 +15,7 @@ impl AnimationState {
 
     /// Get animation start time.
     #[inline]
-    pub(super) fn start(&self) -> f64 {
+    pub(super) const fn start(&self) -> f64 {
         self.start_time
     }
 
@@ -34,11 +34,37 @@ impl AnimationState {
     }
 
     /// Offset the animation start time by the given amount.
-    pub(super) fn offset(&self, offset: f64) -> Self {
+    pub(super) const fn offset(&self, offset: f64) -> Self {
         Self {
             start_time: self.start_time + offset,
             current_time: self.current_time,
         }
+    }
+}
+
+/// Animation state values.
+pub(super) struct AnimValues<T> {
+    start_val: T,
+    current_val: T,
+}
+
+impl<T> AnimValues<T> {
+    /// Create `AnimVars` from the a starting and current value.
+    pub(super) const fn new(start_val: T, current_val: T) -> Self {
+        Self {
+            start_val,
+            current_val,
+        }
+    }
+
+    /// Consume `self`, returning the starting value.
+    pub(super) fn start_value(self) -> T {
+        self.start_val
+    }
+
+    /// Consume `self`, returning the current value.
+    pub(super) fn current_value(self) -> T {
+        self.current_val
     }
 }
 

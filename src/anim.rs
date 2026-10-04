@@ -2,7 +2,7 @@ use std::any::Any;
 
 use crate::mem;
 use crate::segment::AnimationSegment;
-use crate::state::AnimationState;
+use crate::state::{AnimValues, AnimationState};
 use crate::ty::{AnimFn, AnimPointer};
 
 /// An animation defined by out-in [`AnimationSegment`](s).
@@ -136,8 +136,7 @@ impl<F0, F1> Animation<F0, F1> {
         ui: &mut egui::Ui,
         id: egui::Id,
         state: AnimationState,
-        start_value: T,
-        current_value: T,
+        vars: AnimValues<T>,
         add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
     ) -> R
     where
@@ -146,18 +145,18 @@ impl<F0, F1> Animation<F0, F1> {
     {
         match self.run_state(state) {
             RunState::OutSeg(normal) => {
-                self.animate_out(ui, id, normal, |ui| add_contents(ui, start_value))
+                self.animate_out(ui, id, normal, |ui| add_contents(ui, vars.start_value()))
             }
             RunState::InSeg(normal) => {
                 mem::clear_animation_layer(ui, id);
-                self.animate_in(ui, id, normal, |ui| add_contents(ui, current_value))
+                self.animate_in(ui, id, normal, |ui| add_contents(ui, vars.current_value()))
             }
             RunState::None => {
                 mem::clear_start_value::<T>(ui, id);
                 mem::clear_start_time(ui, id);
                 mem::clear_animation_layer(ui, id);
 
-                add_contents(ui, current_value)
+                add_contents(ui, vars.current_value())
             }
         }
     }

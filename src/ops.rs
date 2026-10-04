@@ -3,6 +3,7 @@ use std::any::Any;
 use crate::Animation;
 use crate::RunState;
 use crate::mem;
+use crate::state::AnimValues;
 use crate::state::AnimationState;
 use crate::ty::AnimFn;
 
@@ -63,9 +64,10 @@ pub fn animate<T, R, F0, F1>(
         false => {
             let start_time = mem::get_or_insert_start_time(ui, id, current_time);
             let state = AnimationState::new(start_time, current_time);
+            let vars = AnimValues::new(start_value, current_value);
 
             ui.ctx().request_repaint();
-            animation.animate(ui, id, state, start_value, current_value, add_contents)
+            animation.animate(ui, id, state, vars, add_contents)
         }
     };
 }
