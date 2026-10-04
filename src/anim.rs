@@ -21,9 +21,9 @@ use crate::state::{AnimProgress, AnimValues};
 ///
 /// ## Example
 /// ```
-/// # use egui_animate::Animation;
+/// # use egui_animate::{Animation, Sequence};
 /// // A 0.2 second fade out/in animation.
-/// const ANIM: Animation = Animation::new(
+/// const ANIM: Animation<Sequence> = Animation::new(
 ///     0.2,
 ///     |ui, normal| ui.set_opacity(1.0 - normal),
 ///     |ui, normal| ui.set_opacity(normal),
@@ -36,7 +36,7 @@ use crate::state::{AnimProgress, AnimValues};
 /// [`Sequence`] or [`Layer`] as the first generic argument `S`. See the respective documentation of
 /// each marker type for more.
 #[derive(Clone, Copy)]
-pub struct Animation<S = Sequence, F0 = AnimFn, F1 = AnimFn> {
+pub struct Animation<S, F0 = AnimFn, F1 = AnimFn> {
     /// The segment animating the prior value **out**.
     pub out_seg: AnimationSegment<F0>,
     /// The segment animating the new value **in**.

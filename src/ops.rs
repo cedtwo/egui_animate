@@ -7,8 +7,8 @@ use crate::state::AnimValues;
 
 /// Create an animation that transitions between changes of the given `value`.
 ///
-/// Requires a unique [`egui::Id`], and [`Animation`]. See [`Animation`] for details
-/// on how to define an animation.
+/// Requires a unique [`egui::Id`], and [`Animation`]. See the [`Animation`] documentation on how to
+/// define an animation.
 ///
 /// # Example
 /// ```
@@ -16,7 +16,7 @@ use crate::state::AnimValues;
 /// # use eframe;
 /// # use egui_animate::*;
 /// // A linear 0.3 second fade out/in animation.
-/// const FADE_ANIM: Animation = Animation::new(
+/// const FADE_ANIM: Animation<Sequence> = Animation::new(
 ///     0.3,
 ///     |ui, normal| ui.set_opacity(1.0 - normal),
 ///     |ui, normal| ui.set_opacity(normal),
@@ -69,15 +69,14 @@ pub fn animate<T, R, A>(
     };
 }
 
-/// Get the [`RunState`] for the animation of the given `id`. Returns `RunState::None`
-/// for animations that do not exist.
+/// Get the [`RunState`](Animate::RunState) for the animation of the given `id`.
 ///
 /// # Example
 /// ```
 /// # use egui;
 /// # use eframe;
 /// # use egui_animate::*;
-/// # const MY_ANIM: Animation = Animation::EMPTY;
+/// # const MY_ANIM: Animation<Sequence> = Animation::EMPTY;
 /// # let mut my_state: u32 = 0;
 /// #
 /// # let ctx = egui::Context::default();

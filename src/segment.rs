@@ -9,13 +9,13 @@ pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 ///
 /// # Example
 /// ```
-/// # use egui_animate::{Animation, AnimationSegment};
+/// # use egui_animate::*;
 /// // A simple animation that fades the prior value out, and the new value in.
 /// // Has a total time of `0.4` seconds with each segment taking a respective `0.2` seconds each.
 /// const FADE_OUT: AnimationSegment = AnimationSegment::new(0.2, |ui, normal| ui.set_opacity(1.0 - normal));
 /// const FADE_IN: AnimationSegment = AnimationSegment::new(0.2, |ui, normal| ui.set_opacity(normal));
 ///
-/// const ANIM: Animation = Animation::from_segments(FADE_OUT, FADE_IN);
+/// const ANIM: Animation<Sequence> = Animation::from_segments(FADE_OUT, FADE_IN);
 /// ```
 #[derive(Clone, Copy)]
 pub struct AnimationSegment<F = AnimFn> {

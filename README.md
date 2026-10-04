@@ -34,7 +34,7 @@ is set to `true`.
 # use eframe;
 # use egui_animate::*;
 // A animation that sets the (scoped) ui opacity from 0.0 to 1.0 over 0.5 seconds.
-const FADE_IN: Animation = Animation::new_in(0.5, |ui, normal| ui.set_opacity(normal));
+const FADE_IN: Animation<Sequence> = Animation::new_in(0.5, |ui, normal| ui.set_opacity(normal));
 
 // Ui state.
 let mut show_ui = false;
@@ -71,8 +71,8 @@ animation on input.
 # use egui;
 # use eframe;
 # use egui_animate::*;
-# const SLIDE_FADE_LEFT: Animation = Animation::EMPTY;
-# const SLIDE_FADE_RIGHT: Animation = Animation::EMPTY;
+# const SLIDE_FADE_LEFT: Animation<Sequence> = Animation::EMPTY;
+# const SLIDE_FADE_RIGHT: Animation<Sequence> = Animation::EMPTY;
 // Left and right slide animations. See the example project for definitions.
 // const SLIDE_FADE_LEFT: Animation = ..;
 // const SLIDE_FADE_RIGHT: Animation = ..;
@@ -132,7 +132,7 @@ the duration of an animation.
 # use egui;
 # use eframe;
 # use egui_animate::*;
-# const MY_ANIM: Animation = Animation::EMPTY;
+# const MY_ANIM: Animation<Sequence> = Animation::EMPTY;
 # let mut my_state = 0u32;
 # let ctx = egui::Context::default();
 # ctx.run(egui::RawInput::default(), |ctx| {
