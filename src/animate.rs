@@ -5,7 +5,7 @@ use crate::state::{AnimProgress, AnimValues};
 /// Trait for running animation logic and retrieving an animation progression.
 pub trait Animate {
     /// The current progression of an animation.
-    type RunState;
+    type RunState: Default;
 
     /// Get the [`RunState`](Self::RunState) for the current frame.
     fn run_state(&self, progress: AnimProgress) -> Self::RunState;
@@ -17,6 +17,6 @@ pub trait Animate {
         id: egui::Id,
         progress: AnimProgress,
         vars: AnimValues<T>,
-        add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
+        add_contents: impl FnMut(&mut egui::Ui, T) -> R,
     ) -> R;
 }

@@ -1,4 +1,4 @@
-use crate::ty::{AnimFn, AnimPointer};
+use crate::ty::AnimPointer;
 
 /// A single segment of the animation.
 ///
@@ -47,16 +47,15 @@ impl<F> AnimationSegment<F> {
     }
 }
 
-impl<F: AnimFn> AnimationSegment<F> {
-    /// Get the animation function.
-    pub fn anim_fn(&self) -> F {
-        self.anim_fn
-    }
-
+impl<F> AnimationSegment<F>
+where
+    F: Fn(&mut egui::Ui, f32),
+{
     /// Create a child [`egui::Ui`] for animation.
     fn scope_animation<R>(
         ui: &mut egui::Ui,
         id: egui::Id,
+        rect: egui::Rect,
         anim_fn: impl FnOnce(&mut egui::Ui),
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
     ) -> R {
@@ -64,6 +63,7 @@ impl<F: AnimFn> AnimationSegment<F> {
         ui.scope_builder(
             egui::UiBuilder::new()
                 .id_salt("animation_scope")
+                .max_rect(rect)
                 .layer_id(layer_id),
             |ui| {
                 anim_fn(ui);
@@ -74,14 +74,15 @@ impl<F: AnimFn> AnimationSegment<F> {
     }
 
     /// Apply the animation function, passing in the given `normal`.
-    pub(super) fn animate<R>(
+    pub(super) fn animate_scoped<R>(
         &self,
         ui: &mut egui::Ui,
         id: egui::Id,
+        rect: egui::Rect,
         normal: f32,
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
     ) -> R {
-        Self::scope_animation(ui, id, |ui| self.anim_fn.tick(ui, normal), add_contents)
+        Self::scope_animation(ui, id, rect, |ui| (self.anim_fn)(ui, normal), add_contents)
     }
 }
 

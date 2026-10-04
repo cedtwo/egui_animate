@@ -45,7 +45,7 @@ pub fn animate<T, R, A>(
     id: impl Into<egui::Id>,
     value: T,
     anim: A,
-    add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
+    mut add_contents: impl FnMut(&mut egui::Ui, T) -> R,
 ) where
     T: 'static + Any + Clone + Send + Sync + Default + PartialEq,
     A: Animate,

@@ -1,10 +1,12 @@
 use std::any::Any;
+use std::marker::PhantomData;
 
 use crate::animate::Animate;
 use crate::mem;
+use crate::schedule::{Layer, Sequence};
 use crate::segment::AnimationSegment;
 use crate::state::{AnimProgress, AnimValues};
-use crate::ty::{AnimFn, AnimPointer};
+use crate::ty::AnimPointer;
 
 /// An animation defined by out-in [`AnimationSegment`](s).
 ///
@@ -46,42 +48,52 @@ use crate::ty::{AnimFn, AnimPointer};
 /// const FADE_ANIM: Animation = Animation::new(0.2, out_fn, in_fn);
 /// ```
 #[derive(Clone, Copy)]
-pub struct Animation<F0 = AnimPointer, F1 = AnimPointer> {
+pub struct Animation<S = Sequence, F0 = AnimPointer, F1 = AnimPointer> {
     /// The segment animating the prior value **out**.
     pub out_seg: AnimationSegment<F0>,
     /// The segment animating the new value **in**.
     pub in_seg: AnimationSegment<F1>,
+    /// The animation schedule (either [`Sequence`] or [`Layer`]).
+    pub _schedule: PhantomData<S>,
 }
 
-impl Animation<AnimPointer, AnimPointer> {
+impl<S> Animation<S, AnimPointer, AnimPointer> {
     /// An empty placeholder animation.
     pub const EMPTY: Self =
         Animation::from_segments(AnimationSegment::EMPTY, AnimationSegment::EMPTY);
 }
 
-impl<F0> Animation<F0, AnimPointer> {
+impl<F0> Animation<Sequence, F0, AnimPointer> {
     /// Create a new `Animation` with only the *out* segment. Passes the the prior
     /// value to the animation scope for the duration of the `out_fn`.
     pub const fn new_out(duration: f32, out_fn: F0) -> Self {
         let out_seg = AnimationSegment::new(duration, out_fn);
         let in_seg = AnimationSegment::EMPTY;
 
-        Self { out_seg, in_seg }
+        Self {
+            out_seg,
+            in_seg,
+            _schedule: PhantomData,
+        }
     }
 }
 
-impl<F1> Animation<AnimPointer, F1> {
+impl<F1> Animation<Sequence, AnimPointer, F1> {
     /// Create a new `Animation` with only the *in* segment. Passes the the mutated
     /// value to the animation scope for the duration of the `in_fn`.
     pub const fn new_in(duration: f32, in_fn: F1) -> Self {
         let out_seg = AnimationSegment::EMPTY;
         let in_seg = AnimationSegment::new(duration, in_fn);
 
-        Self { out_seg, in_seg }
+        Self {
+            out_seg,
+            in_seg,
+            _schedule: PhantomData,
+        }
     }
 }
 
-impl<F0, F1> Animation<F0, F1> {
+impl<S, F0, F1> Animation<S, F0, F1> {
     /// Create a new `Animation` with the given total `duration`, split over segments.
     pub const fn new(duration: f32, out_fn: F0, in_fn: F1) -> Self {
         let segment_duration = duration / 2.0;
@@ -89,7 +101,11 @@ impl<F0, F1> Animation<F0, F1> {
         let out_seg = AnimationSegment::new(segment_duration, out_fn);
         let in_seg = AnimationSegment::new(segment_duration, in_fn);
 
-        Self { out_seg, in_seg }
+        Self {
+            out_seg,
+            in_seg,
+            _schedule: PhantomData,
+        }
     }
 
     /// Create a new `Animation` from the given [`AnimationSegment`]s.
@@ -97,7 +113,11 @@ impl<F0, F1> Animation<F0, F1> {
         out_seg: AnimationSegment<F0>,
         in_seg: AnimationSegment<F1>,
     ) -> Self {
-        Self { out_seg, in_seg }
+        Self {
+            out_seg,
+            in_seg,
+            _schedule: PhantomData,
+        }
     }
 
     /// Get the **out** segment duration.
@@ -116,20 +136,24 @@ impl<F0, F1> Animation<F0, F1> {
     pub const fn duration(&self) -> f32 {
         self.out_seg.duration + self.in_seg.duration
     }
+}
 
+impl<S, F0, F1> Animation<S, F0, F1> {
     /// Delegate to the **out** segment [`AnimationSegment::animate`] fn.
     #[inline]
     fn animate_out<R>(
         &self,
         ui: &mut egui::Ui,
         id: egui::Id,
+        rect: egui::Rect,
         normal: f32,
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
     ) -> R
     where
-        F0: AnimFn,
+        F0: Fn(&mut egui::Ui, f32),
     {
-        self.out_seg.animate(ui, id, normal, add_contents)
+        self.out_seg
+            .animate_scoped(ui, id, rect, normal, add_contents)
     }
 
     /// Delegate to the **in** segment [`AnimationSegment::animate`] fn.
@@ -138,29 +162,35 @@ impl<F0, F1> Animation<F0, F1> {
         &self,
         ui: &mut egui::Ui,
         id: egui::Id,
+        rect: egui::Rect,
         normal: f32,
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
     ) -> R
     where
-        F1: AnimFn,
+        F1: Fn(&mut egui::Ui, f32),
     {
-        self.in_seg.animate(ui, id, normal, add_contents)
+        self.in_seg
+            .animate_scoped(ui, id, rect, normal, add_contents)
     }
 }
 
-impl<F0: AnimFn, F1: AnimFn> Animate for Animation<F0, F1> {
-    type RunState = RunState;
+impl<F0, F1> Animate for Animation<Sequence, F0, F1>
+where
+    F0: Fn(&mut egui::Ui, f32),
+    F1: Fn(&mut egui::Ui, f32),
+{
+    type RunState = SequenceRunState;
 
     fn run_state(&self, progress: AnimProgress) -> Self::RunState {
         if let Some(normal) = progress.elapsed_normal(self.out_dur() as f64) {
-            RunState::OutSeg(normal)
+            SequenceRunState::OutSeg(normal)
         } else if let Some(normal) = progress
             .offset(self.out_dur() as f64)
             .elapsed_normal(self.in_dur() as f64)
         {
-            RunState::InSeg(normal)
+            SequenceRunState::InSeg(normal)
         } else {
-            RunState::None
+            SequenceRunState::None
         }
     }
 
@@ -173,14 +203,24 @@ impl<F0: AnimFn, F1: AnimFn> Animate for Animation<F0, F1> {
         add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
     ) -> R {
         match self.run_state(progress) {
-            RunState::OutSeg(normal) => {
-                self.animate_out(ui, id, normal, |ui| add_contents(ui, vars.start_value()))
-            }
-            RunState::InSeg(normal) => {
+            SequenceRunState::OutSeg(normal) => self.animate_out(
+                ui,
+                id.with("_out"),
+                ui.available_rect_before_wrap(),
+                normal,
+                |ui| add_contents(ui, vars.start_value()),
+            ),
+            SequenceRunState::InSeg(normal) => {
                 mem::clear_animation_layer(ui, id);
-                self.animate_in(ui, id, normal, |ui| add_contents(ui, vars.current_value()))
+                self.animate_in(
+                    ui,
+                    id.with("_in"),
+                    ui.available_rect_before_wrap(),
+                    normal,
+                    |ui| add_contents(ui, vars.current_value()),
+                )
             }
-            RunState::None => {
+            SequenceRunState::None => {
                 mem::clear_start_value::<T>(ui, id);
                 mem::clear_start_time(ui, id);
                 mem::clear_animation_layer(ui, id);
@@ -191,18 +231,76 @@ impl<F0: AnimFn, F1: AnimFn> Animate for Animation<F0, F1> {
     }
 }
 
-impl Default for Animation {
-    fn default() -> Self {
-        Self {
-            out_seg: Default::default(),
-            in_seg: Default::default(),
+impl<F0, F1> Animate for Animation<Layer, F0, F1>
+where
+    F0: Fn(&mut egui::Ui, f32),
+    F1: Fn(&mut egui::Ui, f32),
+{
+    type RunState = LayerRunState;
+
+    fn run_state(&self, progress: AnimProgress) -> Self::RunState {
+        match (
+            progress.elapsed_normal(self.out_dur() as f64),
+            progress.elapsed_normal(self.in_dur() as f64),
+        ) {
+            (Some(out_norm), Some(in_norm)) => LayerRunState::Running { out_norm, in_norm },
+            (Some(out_norm), None) => LayerRunState::Running {
+                out_norm,
+                in_norm: 1.0,
+            },
+            (None, Some(in_norm)) => LayerRunState::Running {
+                out_norm: 1.0,
+                in_norm,
+            },
+            (None, None) => LayerRunState::None,
+        }
+    }
+
+    fn animate<T: 'static + Any + Clone + Send + Sync + Default, R>(
+        &self,
+        ui: &mut egui::Ui,
+        id: egui::Id,
+        progress: AnimProgress,
+        vars: AnimValues<T>,
+        mut add_contents: impl FnMut(&mut egui::Ui, T) -> R,
+    ) -> R {
+        match self.run_state(progress) {
+            LayerRunState::Running { out_norm, in_norm } => {
+                let (start_value, current_value) = vars.split();
+                let (out_id, in_id) = (id.with("_out"), id.with("_in"));
+                let rect = ui.available_rect_before_wrap();
+
+                self.animate_out(ui, out_id, rect, out_norm, |ui| {
+                    add_contents(ui, start_value)
+                });
+                self.animate_in(ui, in_id, rect, in_norm, |ui| {
+                    add_contents(ui, current_value)
+                })
+            }
+            LayerRunState::None => {
+                mem::clear_start_value::<T>(ui, id);
+                mem::clear_start_time(ui, id);
+                mem::clear_animation_layer(ui, id);
+
+                add_contents(ui, vars.current_value())
+            }
         }
     }
 }
 
-/// An identified animation segment and *normal*.
+impl<S> Default for Animation<S> {
+    fn default() -> Self {
+        Self {
+            out_seg: Default::default(),
+            in_seg: Default::default(),
+            _schedule: PhantomData,
+        }
+    }
+}
+
+/// Identifies animation progression and *normal* for an [`Animation`].
 #[derive(Debug, Default, PartialEq, PartialOrd)]
-pub enum RunState {
+pub enum SequenceRunState {
     /// The *out* animation segment normal.
     OutSeg(f32),
     /// The *in* animation segment normal.
@@ -212,12 +310,32 @@ pub enum RunState {
     None,
 }
 
-impl RunState {
-    /// Returns `true` if the animation is in either the *out* or *in* state.
+impl SequenceRunState {
+    /// Returns `true` if either animation segment is currently running.
     pub fn is_running(&self) -> bool {
         match self {
-            RunState::OutSeg(_) | RunState::InSeg(_) => true,
-            RunState::None => false,
+            SequenceRunState::OutSeg(_) | SequenceRunState::InSeg(_) => true,
+            SequenceRunState::None => false,
+        }
+    }
+}
+
+/// Identifies animation progression and *normal* for an [`Animation`].
+#[derive(Debug, Default, PartialEq, PartialOrd)]
+pub enum LayerRunState {
+    /// One or both segments of the animation are still running.
+    Running { out_norm: f32, in_norm: f32 },
+    /// The animation is not currently running.
+    #[default]
+    None,
+}
+
+impl LayerRunState {
+    /// Returns `true` if either animation segment is currently running.
+    pub fn is_running(&self) -> bool {
+        match self {
+            LayerRunState::Running { .. } => true,
+            LayerRunState::None => false,
         }
     }
 }

@@ -1,11 +1,11 @@
-/// The current progress of an animation.
+/// Animation state progress.
 pub struct AnimProgress {
     start_time: f64,
     current_time: f64,
 }
 
 impl AnimProgress {
-    /// Create a new `AnimationState` from the `start_time` and `current_time`.
+    /// Create `AnimProgress` from starting and current time.
     pub(super) const fn new(start_time: f64, current_time: f64) -> Self {
         Self {
             start_time,
@@ -65,6 +65,11 @@ impl<T> AnimValues<T> {
     /// Consume `self`, returning the current value.
     pub(super) fn current_value(self) -> T {
         self.current_val
+    }
+
+    /// Consume `self`, returning a tuple of the respective start and current value.
+    pub(super) fn split(self) -> (T, T) {
+        (self.start_val, self.current_val)
     }
 }
 
