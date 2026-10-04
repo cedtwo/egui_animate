@@ -2,7 +2,7 @@ use std::any::Any;
 
 use crate::mem;
 use crate::segment::AnimationSegment;
-use crate::state::{AnimValues, AnimationState};
+use crate::state::{AnimProgress, AnimValues};
 use crate::ty::{AnimFn, AnimPointer};
 
 /// An animation defined by out-in [`AnimationSegment`](s).
@@ -117,10 +117,10 @@ impl<F0, F1> Animation<F0, F1> {
     }
 
     /// Get the `RunState` for the current frame.
-    pub(super) fn run_state(&self, state: AnimationState) -> RunState {
-        if let Some(normal) = state.elapsed_normal(self.out_dur() as f64) {
+    pub(super) fn run_state(&self, progress: AnimProgress) -> RunState {
+        if let Some(normal) = progress.elapsed_normal(self.out_dur() as f64) {
             RunState::OutSeg(normal)
-        } else if let Some(normal) = state
+        } else if let Some(normal) = progress
             .offset(self.out_dur() as f64)
             .elapsed_normal(self.in_dur() as f64)
         {
@@ -135,7 +135,7 @@ impl<F0, F1> Animation<F0, F1> {
         &self,
         ui: &mut egui::Ui,
         id: egui::Id,
-        state: AnimationState,
+        progress: AnimProgress,
         vars: AnimValues<T>,
         add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
     ) -> R
@@ -143,7 +143,7 @@ impl<F0, F1> Animation<F0, F1> {
         F0: AnimFn,
         F1: AnimFn,
     {
-        match self.run_state(state) {
+        match self.run_state(progress) {
             RunState::OutSeg(normal) => {
                 self.animate_out(ui, id, normal, |ui| add_contents(ui, vars.start_value()))
             }

@@ -1,10 +1,10 @@
-/// The current state of an animation.
-pub(super) struct AnimationState {
+/// The current progress of an animation.
+pub(super) struct AnimProgress {
     start_time: f64,
     current_time: f64,
 }
 
-impl AnimationState {
+impl AnimProgress {
     /// Create a new `AnimationState` from the `start_time` and `current_time`.
     pub(super) const fn new(start_time: f64, current_time: f64) -> Self {
         Self {
@@ -75,7 +75,7 @@ mod tests {
     mod animation_state {
         use super::*;
 
-        const TEST_ANIM_STATE: AnimationState = AnimationState::new(1.0, 1.0);
+        const TEST_ANIM_STATE: AnimProgress = AnimProgress::new(1.0, 1.0);
 
         #[test]
         fn test_elapsed() {

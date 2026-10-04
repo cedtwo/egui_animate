@@ -4,7 +4,7 @@ use crate::Animation;
 use crate::RunState;
 use crate::mem;
 use crate::state::AnimValues;
-use crate::state::AnimationState;
+use crate::state::AnimProgress;
 use crate::ty::AnimFn;
 
 /// Create an animation that transitions between changes of the given `value`.
@@ -63,7 +63,7 @@ pub fn animate<T, R, F0, F1>(
         true => add_contents(ui, current_value),
         false => {
             let start_time = mem::get_or_insert_start_time(ui, id, current_time);
-            let state = AnimationState::new(start_time, current_time);
+            let state = AnimProgress::new(start_time, current_time);
             let vars = AnimValues::new(start_value, current_value);
 
             ui.ctx().request_repaint();
@@ -107,7 +107,7 @@ pub fn run_state(ui: &mut egui::Ui, id: impl Into<egui::Id>, animation: Animatio
     match mem::get_start_time(ui, id) {
         Some(start_time) => {
             let current_time = ui.ctx().input(|input| input.time);
-            let state = AnimationState::new(start_time, current_time);
+            let state = AnimProgress::new(start_time, current_time);
             animation.run_state(state)
         }
         None => Default::default(),
