@@ -199,7 +199,7 @@ where
                 |ui| add_contents(ui, vars.start_value()),
             ),
             SequenceRunState::InSeg(normal) => {
-                mem::clear_animation_layer(ui, id);
+                mem::clear_animation_layer(ui, id.with("_out"));
                 self.animate_in(
                     ui,
                     id.with("_in"),
@@ -211,7 +211,8 @@ where
             SequenceRunState::None => {
                 mem::clear_start_value::<T>(ui, id);
                 mem::clear_start_time(ui, id);
-                mem::clear_animation_layer(ui, id);
+                mem::clear_animation_layer(ui, id.with("_out"));
+                mem::clear_animation_layer(ui, id.with("_in"));
 
                 add_contents(ui, vars.current_value())
             }
@@ -273,7 +274,8 @@ where
             LayerRunState::None => {
                 mem::clear_start_value::<T>(ui, id);
                 mem::clear_start_time(ui, id);
-                mem::clear_animation_layer(ui, id);
+                mem::clear_animation_layer(ui, id.with("_out"));
+                mem::clear_animation_layer(ui, id.with("_in"));
 
                 add_contents(ui, vars.current_value())
             }
