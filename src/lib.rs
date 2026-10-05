@@ -11,12 +11,15 @@ mod anim;
 mod anim_ops;
 mod norm_ops;
 
-pub use crate::anim::Animation;
-pub use crate::anim::LayerRunState;
-pub use crate::anim::SequenceRunState;
+/// Core types and operations.
+pub mod prelude {
+    pub use crate::anim::Animation;
+    pub use crate::anim::LayerRunState;
+    pub use crate::anim::SequenceRunState;
 
-pub use crate::schedule::{Layer, Sequence};
-pub use crate::segment::AnimationSegment;
+    pub use crate::schedule::{Layer, Sequence};
+    pub use crate::segment::AnimationSegment;
 
-pub use crate::anim_ops::{animate, run_state};
-pub use crate::norm_ops::{fade, scale, translate};
+    pub use crate::anim_ops::{animate, run_state};
+    pub use crate::norm_ops::{fade, scale, translate};
+}
