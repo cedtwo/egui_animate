@@ -1,21 +1,25 @@
 /// The animation function pointer type.
 pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 
+/// # AnimationSegment
+///
 /// A single segment of the animation.
 ///
-/// Defines the `duration` of a segment (in seconds), and a mutating function for the
-/// [`Ui`](egui::Ui). See [`Animation`](crate::Animation) for details on how to construct an
-/// animation function.
+/// `AnimationSegment` Defines the `duration` of a segment (in seconds), and a mutating function for
+/// the [`Ui`](egui::Ui). Note that the duration of a single segment affects the total duration of a
+/// [`Sequence`](crate::schedule::Sequence) and [`Layer`](crate::schedule::Layer) animation
+/// differently. See [`Animation`](crate::prelude::Animation) and especially the documentation of
+/// the [`crate::schedule`] marker types for more.
 ///
-/// # Example
+/// ## Example
+///
+/// The demonstrates an inlined [`fade`](crate::norm_ops::fade) operation:
+///
 /// ```
 /// # use egui_animate::*;
-/// // A simple animation that fades the prior value out, and the new value in.
-/// // Has a total time of `0.4` seconds with each segment taking a respective `0.2` seconds each.
-/// const FADE_OUT: AnimationSegment = AnimationSegment::new(0.2, |ui, normal| ui.set_opacity(1.0 - normal));
-/// const FADE_IN: AnimationSegment = AnimationSegment::new(0.2, |ui, normal| ui.set_opacity(normal));
-///
-/// const ANIM: Animation<Sequence> = Animation::from_segments(FADE_OUT, FADE_IN);
+/// // A simple animation that either fades elements *out* or *in* depending on it's position in `Animation`.
+/// const FADE: AnimationSegment = AnimationSegment::new(0.2, |ui, normal| ui.set_opacity(normal));
+/// const ANIM: Animation<Sequence> = Animation::from_segments(FADE, FADE);
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct AnimationSegment<F = AnimFn> {
