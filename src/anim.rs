@@ -35,7 +35,7 @@ use crate::state::{AnimProgress, AnimValues};
 /// `Animation` supports running each segment sequentially or at the same time by passing either
 /// [`Sequence`] or [`Layer`] as the first generic argument `S`. See the respective documentation of
 /// each marker type for more.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Animation<S, F0 = AnimFn, F1 = AnimFn> {
     /// The segment animating the prior value **out**.
     pub out_seg: AnimationSegment<F0>,

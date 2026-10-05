@@ -17,7 +17,7 @@ pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 ///
 /// const ANIM: Animation<Sequence> = Animation::from_segments(FADE_OUT, FADE_IN);
 /// ```
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct AnimationSegment<F = AnimFn> {
     /// The duration of the animation, in seconds.
     pub duration: f32,
