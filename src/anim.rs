@@ -7,34 +7,55 @@ use crate::schedule::{Layer, Sequence};
 use crate::segment::{AnimFn, AnimationSegment};
 use crate::state::{AnimProgress, AnimValues};
 
+/// # Animation
+///
 /// An animation defined by [`AnimationSegment`]\(s).
 ///
-/// An animation must include either an *out* function, an *in* function, or both. Single function
-/// animations may be suitable for displaying or hiding elements, while out/in animations simplify
-/// transitions.
+/// An animation mutates [`egui::Ui`] state for a given duration. It contains functions that recieve
+/// a *normal*, the linear normalized progression of an animation segment for the segment duration.
+/// An animation contains either an *out* function receiving a normal value of `1.0` to `0.0`, an
+/// *in* function receiving a normal of `0.0` to `1.0` or both.
 ///
-/// # Animation Functions
+/// The respective *out* and *in* segments are intended for hiding and revealing [`egui::Ui`] state,
+/// either individually or during a transition. `Animation` supports running each segment
+/// sequentially or at the same time by passing either [`Sequence`] or [`Layer`] as the first
+/// generic argument `S`. See the respective documentation of each marker type for more.
 ///
-/// Animation functions recieve a *normal*, representing the linear relative progress (`0.0` to
-/// `1.0`) of an animation segment. This can be passed to easing functions for smoother animations,
-/// and often reversed to reverse a previously defined animation.
+/// ## Examples
 ///
-/// ## Example
+/// Animations can be customized by passing a function (or closure) with the type signature
+/// `Fn(&mut egui::Ui, f32)`. Simple linear animations can pass one of the helper functions in
+/// [`crate::norm_ops`]:
+///
 /// ```
-/// # use egui_animate::{Animation, Sequence};
-/// // A 0.2 second fade out/in animation.
-/// const ANIM: Animation<Sequence> = Animation::new(
-///     0.2,
-///     |ui, normal| ui.set_opacity(1.0 - normal),
-///     |ui, normal| ui.set_opacity(normal),
-/// );
+/// # use egui_animate::prelude::*;
+/// // A simple linear sequential fade in/out animation.
+/// const ANIM: Animation<Sequence> = Animation::new(0.2, fade, fade);
 /// ```
 ///
-/// # Animation Scheduling
+/// Providing our own function (or closure) allows for much more customization. The following
+/// demonstrates applying easing to the *normal* before passing it to the [`fade`](crate::norm_ops::fade)
+/// and [`translate`](crate::norm_ops::translate) functions:
 ///
-/// `Animation` supports running each segment sequentially or at the same time by passing either
-/// [`Sequence`] or [`Layer`] as the first generic argument `S`. See the respective documentation of
-/// each marker type for more.
+/// ```
+/// # use egui_animate::prelude::*;
+/// # use egui::Vec2;
+/// fn anim_fn(ui: &mut egui::Ui, normal f32) {
+///     // Use an easing function provided by `egui`.
+///     let normal = egui::emath::easing::quadratic_out(normal);
+///
+///     // Slides and fades out to the left when used as an *out* fn.
+///     // Slides and fades in from the left when used as an *in* fn.
+///     translate(ui, normal, Vec2::new(-20.0, 0.0));
+///     fade(ui, normal);
+/// }
+///
+/// const ANIM: Animation<Sequence> = Animation::new(0.2, anim_fn, anim_fn);
+/// ```
+///
+/// Note that all operations are applied to a new [`egui::Ui`] scope when calling [`animate`](crate::anim_ops::animate).
+/// Animation functions can leverage this to make modification to the `Ui` that will not affect the
+/// containing `Ui` elements. See [`animate`](crate::anim_ops::animate) for more on usage.
 #[derive(Debug, Clone, Copy)]
 pub struct Animation<S, F0 = AnimFn, F1 = AnimFn> {
     /// The segment animating the prior value **out**.
