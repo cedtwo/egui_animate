@@ -7,7 +7,8 @@ mod segment;
 mod state;
 
 mod anim;
-mod ops;
+
+mod anim_ops;
 
 pub use anim::Animation;
 pub use anim::LayerRunState;
@@ -16,4 +17,4 @@ pub use anim::SequenceRunState;
 pub use schedule::{Layer, Sequence};
 pub use segment::AnimationSegment;
 
-pub use ops::{animate, run_state};
+pub use anim_ops::{animate, run_state};
