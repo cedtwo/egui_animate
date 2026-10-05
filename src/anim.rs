@@ -171,7 +171,7 @@ where
 
     fn run_state(&self, progress: AnimProgress) -> Self::RunState {
         if let Some(normal) = progress.elapsed_normal(self.out_dur() as f64) {
-            SequenceRunState::OutSeg(normal)
+            SequenceRunState::OutSeg(1.0 - normal)
         } else if let Some(normal) = progress
             .offset(self.out_dur() as f64)
             .elapsed_normal(self.in_dur() as f64)
@@ -228,7 +228,9 @@ where
 
     fn run_state(&self, progress: AnimProgress) -> Self::RunState {
         match (
-            progress.elapsed_normal(self.out_dur() as f64),
+            progress
+                .elapsed_normal(self.out_dur() as f64)
+                .map(|in_norm| 1.0 - in_norm),
             progress
                 // Offset progress so both animations end at the same time.
                 .offset((self.out_dur() - self.in_dur()).max(0.0) as f64)
@@ -237,10 +239,10 @@ where
             (Some(out_norm), Some(in_norm)) => LayerRunState::Running { out_norm, in_norm },
             (Some(out_norm), None) => LayerRunState::Running {
                 out_norm,
-                in_norm: 1.0,
+                in_norm: 0.0,
             },
             (None, Some(in_norm)) => LayerRunState::Running {
-                out_norm: 1.0,
+                out_norm: 0.0,
                 in_norm,
             },
             (None, None) => LayerRunState::None,
@@ -341,7 +343,7 @@ mod tests {
     fn sequence_run_state() {
         assert_eq!(
             ANIM_SEQ.run_state(AnimProgress::new(0.0, 0.0)),
-            SequenceRunState::OutSeg(0.0)
+            SequenceRunState::OutSeg(1.0)
         );
         assert_eq!(
             ANIM_SEQ.run_state(AnimProgress::new(0.0, 0.5)),
@@ -371,14 +373,14 @@ mod tests {
         assert_eq!(
             ANIM_LAY.run_state(AnimProgress::new(0.0, 0.0)),
             LayerRunState::Running {
-                out_norm: 0.0,
+                out_norm: 1.0,
                 in_norm: 0.0
             }
         );
         assert_eq!(
             ANIM_LAY.run_state(AnimProgress::new(0.0, 0.5)),
             LayerRunState::Running {
-                out_norm: 0.25,
+                out_norm: 0.75,
                 in_norm: 0.0
             }
         );
@@ -392,7 +394,7 @@ mod tests {
         assert_eq!(
             ANIM_LAY.run_state(AnimProgress::new(0.0, 1.5)),
             LayerRunState::Running {
-                out_norm: 0.75,
+                out_norm: 0.25,
                 in_norm: 0.5
             }
         );
