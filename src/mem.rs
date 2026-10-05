@@ -1,6 +1,8 @@
 //! Functions that interact with `egui` persistant memory.
 use std::any::Any;
 
+use egui::{LayerId, Vec2, emath::TSTransform};
+
 const START_TIME_SUFFIX: &'static str = "start_time";
 const START_VALUE_SUFFIX: &'static str = "start_value";
 
@@ -47,4 +49,28 @@ pub(super) fn clear_animation_layer(
 ) -> Option<egui::emath::TSTransform> {
     let layer_id = egui::LayerId::new(ui.layer_id().order, id);
     ui.memory_mut(|m| m.to_global.remove(&layer_id))
+}
+
+pub(super) fn set_transform_layer_translation(
+    ui: &mut egui::Ui,
+    layer_id: LayerId,
+    translation: Vec2,
+) {
+    ui.memory_mut(|m| match m.to_global.get_mut(&layer_id) {
+        Some(tfm) => tfm.translation = translation,
+        None => {
+            m.to_global
+                .insert(layer_id, TSTransform::from_translation(translation));
+        }
+    });
+}
+
+pub(super) fn set_transform_layer_scale(ui: &mut egui::Ui, layer_id: LayerId, scale: f32) {
+    ui.memory_mut(|m| match m.to_global.get_mut(&layer_id) {
+        Some(tfm) => tfm.scaling = scale,
+        None => {
+            m.to_global
+                .insert(layer_id, TSTransform::from_scaling(scale));
+        }
+    });
 }
