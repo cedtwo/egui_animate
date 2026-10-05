@@ -5,32 +5,29 @@ use crate::mem;
 use crate::state::AnimProgress;
 use crate::state::AnimValues;
 
-/// Create an animation that transitions between changes of the given `value`.
+/// Animate on change of the given `value`.
 ///
-/// Requires a unique [`egui::Id`], and [`Animation`]. See the [`Animation`] documentation on how to
-/// define an animation.
+/// `animate` applies a given [`Animation`](crate::anim::Animation) to the scoped `add_contents` on
+/// change of the given `value`. `animate` requires specifying a unique [`egui::Id`] for the scoped
+/// variables within. See [`Animation`](crate::anim::Animation) and the crate level documentation
+/// for more.
 ///
 /// # Example
+///
 /// ```
 /// # use egui;
 /// # use eframe;
-/// # use egui_animate::*;
-/// // A linear 0.3 second fade out/in animation.
-/// const FADE_ANIM: Animation<Sequence> = Animation::new(
-///     0.3,
-///     |ui, normal| ui.set_opacity(1.0 - normal),
-///     |ui, normal| ui.set_opacity(normal),
-/// );
+/// # use egui_animate::prelude::*;
+/// // A linear sequential 0.3 second fade out/in animation.
+/// const FADE_ANIM: Animation<Sequence> = Animation::new(0.3, fade, fade);
 ///
 /// // The variable state.
 /// let mut my_state: u32 = 0;
 ///
 /// # let ctx = egui::Context::default();
-/// #
 /// # ctx.run(egui::RawInput::default(), |ctx| {
 /// # egui::CentralPanel::default().show(ctx, |ui| {
-/// #
-/// // An animation that triggers on button press.
+/// // An animation transitions out the prior value then transitions in the new value.
 /// animate(ui, "my_fade", my_state, FADE_ANIM, |ui, value| {
 ///     if ui.button(format!("Value is {}", value)).clicked() {
 ///         my_state += 1;
@@ -69,21 +66,22 @@ pub fn animate<T, R, A>(
     };
 }
 
-/// Get the [`RunState`](Animate::RunState) for the animation of the given `id`.
+/// Get the [`RunState`](Animate::RunState) for the animation of the given `id`. This is useful for
+/// checking if an animation is running *outside* of the animation scope (eg. for disabling buttons
+/// that may mutate the animation value during animation).
 ///
 /// # Example
 /// ```
 /// # use egui;
 /// # use eframe;
-/// # use egui_animate::*;
+/// # use egui_animate::prelude::*;
 /// # const MY_ANIM: Animation<Sequence> = Animation::EMPTY;
+/// #
 /// # let mut my_state: u32 = 0;
 /// #
 /// # let ctx = egui::Context::default();
-/// #
 /// # ctx.run(egui::RawInput::default(), |ctx| {
 /// # egui::CentralPanel::default().show(ctx, |ui| {
-/// #
 /// // Define an animation with a unique `id`.
 /// animate(ui, "my_anim", my_state, MY_ANIM, |ui, value| {
 ///     // ...
