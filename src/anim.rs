@@ -40,7 +40,7 @@ use crate::state::{AnimProgress, AnimValues};
 /// ```
 /// # use egui_animate::prelude::*;
 /// # use egui::Vec2;
-/// fn anim_fn(ui: &mut egui::Ui, normal f32) {
+/// fn anim_fn(ui: &mut egui::Ui, normal: f32) {
 ///     // Use an easing function provided by `egui`.
 ///     let normal = egui::emath::easing::quadratic_out(normal);
 ///

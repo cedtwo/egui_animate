@@ -16,7 +16,7 @@ pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 /// The demonstrates an inlined [`fade`](crate::norm_ops::fade) operation:
 ///
 /// ```
-/// # use egui_animate::*;
+/// # use egui_animate::prelude::*;
 /// // A simple animation that either fades elements *out* or *in* depending on it's position in `Animation`.
 /// const FADE: AnimationSegment = AnimationSegment::new(0.2, |ui, normal| ui.set_opacity(normal));
 /// const ANIM: Animation<Sequence> = Animation::from_segments(FADE, FADE);
