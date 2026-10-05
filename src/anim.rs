@@ -330,3 +330,75 @@ impl LayerRunState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ANIM_SEQ: Animation<Sequence> = Animation::new(2.0, |_, _| {}, |_, _| {});
+
+    #[test]
+    fn sequence_run_state() {
+        assert_eq!(
+            ANIM_SEQ.run_state(AnimProgress::new(0.0, 0.0)),
+            SequenceRunState::OutSeg(0.0)
+        );
+        assert_eq!(
+            ANIM_SEQ.run_state(AnimProgress::new(0.0, 0.5)),
+            SequenceRunState::OutSeg(0.5)
+        );
+        assert_eq!(
+            ANIM_SEQ.run_state(AnimProgress::new(0.0, 1.0)),
+            SequenceRunState::InSeg(0.0)
+        );
+        assert_eq!(
+            ANIM_SEQ.run_state(AnimProgress::new(0.0, 1.5)),
+            SequenceRunState::InSeg(0.5)
+        );
+        assert_eq!(
+            ANIM_SEQ.run_state(AnimProgress::new(0.0, 2.0)),
+            SequenceRunState::None
+        );
+    }
+
+    const ANIM_LAY: Animation<Layer> = Animation::from_segments(
+        AnimationSegment::new(2.0, |_, _| {}),
+        AnimationSegment::new(1.0, |_, _| {}),
+    );
+
+    #[test]
+    fn layer_run_state() {
+        assert_eq!(
+            ANIM_LAY.run_state(AnimProgress::new(0.0, 0.0)),
+            LayerRunState::Running {
+                out_norm: 0.0,
+                in_norm: 0.0
+            }
+        );
+        assert_eq!(
+            ANIM_LAY.run_state(AnimProgress::new(0.0, 0.5)),
+            LayerRunState::Running {
+                out_norm: 0.25,
+                in_norm: 0.0
+            }
+        );
+        assert_eq!(
+            ANIM_LAY.run_state(AnimProgress::new(0.0, 1.0)),
+            LayerRunState::Running {
+                out_norm: 0.5,
+                in_norm: 0.0
+            }
+        );
+        assert_eq!(
+            ANIM_LAY.run_state(AnimProgress::new(0.0, 1.5)),
+            LayerRunState::Running {
+                out_norm: 0.75,
+                in_norm: 0.5
+            }
+        );
+        assert_eq!(
+            ANIM_LAY.run_state(AnimProgress::new(0.0, 2.0)),
+            LayerRunState::None
+        );
+    }
+}
