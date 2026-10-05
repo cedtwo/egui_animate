@@ -9,12 +9,14 @@ mod state;
 mod anim;
 
 mod anim_ops;
+mod norm_ops;
 
-pub use anim::Animation;
-pub use anim::LayerRunState;
-pub use anim::SequenceRunState;
+pub use crate::anim::Animation;
+pub use crate::anim::LayerRunState;
+pub use crate::anim::SequenceRunState;
 
-pub use schedule::{Layer, Sequence};
-pub use segment::AnimationSegment;
+pub use crate::schedule::{Layer, Sequence};
+pub use crate::segment::AnimationSegment;
 
-pub use anim_ops::{animate, run_state};
+pub use crate::anim_ops::{animate, run_state};
+pub use crate::norm_ops::{fade, scale, translate};
