@@ -54,34 +54,6 @@ impl<F> AnimationSegment<F> {
     }
 }
 
-impl<F> AnimationSegment<F>
-where
-    F: Fn(&mut egui::Ui, f32),
-{
-    /// Call the animation function in a child [`egui::Ui`] animation scope.
-    pub(super) fn animate_scoped<R>(
-        &self,
-        ui: &mut egui::Ui,
-        id: egui::Id,
-        rect: egui::Rect,
-        normal: f32,
-        add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R {
-        let layer_id = egui::LayerId::new(ui.layer_id().order, id);
-        ui.scope_builder(
-            egui::UiBuilder::new()
-                .id_salt("animation_scope")
-                .max_rect(rect)
-                .layer_id(layer_id),
-            |ui| {
-                (|ui| (self.anim_fn)(ui, normal))(ui);
-                add_contents(ui)
-            },
-        )
-        .inner
-    }
-}
-
 impl Default for AnimationSegment<AnimFn> {
     fn default() -> Self {
         Self::EMPTY

@@ -145,9 +145,7 @@ impl<S, F0, F1> Animation<S, F0, F1> {
     pub const fn sum_dur(&self) -> f32 {
         self.out_seg.duration + self.in_seg.duration
     }
-}
 
-impl<S, F0, F1> Animation<S, F0, F1> {
     /// Call the *out* [`AnimationSegment`] function.
     #[inline]
     fn animate_out<R>(
@@ -161,8 +159,10 @@ impl<S, F0, F1> Animation<S, F0, F1> {
     where
         F0: Fn(&mut egui::Ui, f32),
     {
-        self.out_seg
-            .animate_scoped(ui, id, rect, normal, add_contents)
+        Self::animate_scoped(ui, id, rect, |ui| {
+            (|ui| (self.out_seg.anim_fn)(ui, normal))(ui);
+            add_contents(ui)
+        })
     }
 
     /// Call the *in* [`AnimationSegment`] function.
@@ -178,8 +178,28 @@ impl<S, F0, F1> Animation<S, F0, F1> {
     where
         F1: Fn(&mut egui::Ui, f32),
     {
-        self.in_seg
-            .animate_scoped(ui, id, rect, normal, add_contents)
+        Self::animate_scoped(ui, id, rect, |ui| {
+            (|ui| (self.in_seg.anim_fn)(ui, normal))(ui);
+            add_contents(ui)
+        })
+    }
+
+    /// Call the animation function in a child [`egui::Ui`] animation scope.
+    pub(super) fn animate_scoped<R>(
+        ui: &mut egui::Ui,
+        id: egui::Id,
+        rect: egui::Rect,
+        add_contents: impl FnOnce(&mut egui::Ui) -> R,
+    ) -> R {
+        let layer_id = egui::LayerId::new(ui.layer_id().order, id);
+        ui.scope_builder(
+            egui::UiBuilder::new()
+                .id_salt("animation_scope")
+                .max_rect(rect)
+                .layer_id(layer_id),
+            add_contents,
+        )
+        .inner
     }
 }
 

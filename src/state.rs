@@ -1,4 +1,5 @@
 /// Animation state progress.
+#[derive(Debug, Clone, Copy)]
 pub struct AnimProgress {
     start_time: f64,
     current_time: f64,
@@ -43,6 +44,7 @@ impl AnimProgress {
 }
 
 /// Animation state values.
+#[derive(Debug, Clone, Copy)]
 pub struct AnimValues<T> {
     start_val: T,
     current_val: T,
