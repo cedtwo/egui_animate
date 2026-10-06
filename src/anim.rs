@@ -159,7 +159,8 @@ impl<S, F0, F1> Animation<S, F0, F1> {
     where
         F0: Fn(&mut egui::Ui, f32),
     {
-        Self::animate_scoped(ui, id, rect, |ui| {
+        let layer_id = egui::LayerId::new(ui.layer_id().order, id);
+        Self::scope_content(ui, layer_id, rect, |ui| {
             (|ui| (self.out_seg.anim_fn)(ui, normal))(ui);
             add_contents(ui)
         })
@@ -178,20 +179,20 @@ impl<S, F0, F1> Animation<S, F0, F1> {
     where
         F1: Fn(&mut egui::Ui, f32),
     {
-        Self::animate_scoped(ui, id, rect, |ui| {
+        let layer_id = egui::LayerId::new(ui.layer_id().order, id);
+        Self::scope_content(ui, layer_id, rect, |ui| {
             (|ui| (self.in_seg.anim_fn)(ui, normal))(ui);
             add_contents(ui)
         })
     }
 
-    /// Call the animation function in a child [`egui::Ui`] animation scope.
-    pub(super) fn animate_scoped<R>(
+    /// Pass the [`egui::Ui`] content to an inner scope.
+    pub(super) fn scope_content<R>(
         ui: &mut egui::Ui,
-        id: egui::Id,
+        layer_id: egui::LayerId,
         rect: egui::Rect,
         add_contents: impl FnOnce(&mut egui::Ui) -> R,
     ) -> R {
-        let layer_id = egui::LayerId::new(ui.layer_id().order, id);
         ui.scope_builder(
             egui::UiBuilder::new()
                 .id_salt("animation_scope")
