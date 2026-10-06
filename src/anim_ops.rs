@@ -1,5 +1,6 @@
 use std::any::Any;
 
+use crate::anim::scope_content;
 use crate::animate::Animate;
 use crate::mem;
 use crate::state::AnimProgress;
@@ -51,7 +52,9 @@ pub fn animate<T, R, A>(
     let start_value = mem::get_or_insert_start_value(ui, id, current_value.clone());
 
     match start_value == current_value {
-        true => add_contents(ui, current_value),
+        true => scope_content(ui, ui.layer_id(), ui.available_rect_before_wrap(), |ui| {
+            add_contents(ui, current_value)
+        }),
         false => {
             let start_time = mem::get_or_insert_start_time(ui, id, current_time);
             let state = AnimProgress::new(start_time, current_time);

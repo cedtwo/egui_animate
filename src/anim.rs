@@ -160,7 +160,7 @@ impl<S, F0, F1> Animation<S, F0, F1> {
         F0: Fn(&mut egui::Ui, f32),
     {
         let layer_id = egui::LayerId::new(ui.layer_id().order, id);
-        Self::scope_content(ui, layer_id, rect, |ui| {
+        scope_content(ui, layer_id, rect, |ui| {
             (|ui| (self.out_seg.anim_fn)(ui, normal))(ui);
             add_contents(ui)
         })
@@ -180,27 +180,10 @@ impl<S, F0, F1> Animation<S, F0, F1> {
         F1: Fn(&mut egui::Ui, f32),
     {
         let layer_id = egui::LayerId::new(ui.layer_id().order, id);
-        Self::scope_content(ui, layer_id, rect, |ui| {
+        scope_content(ui, layer_id, rect, |ui| {
             (|ui| (self.in_seg.anim_fn)(ui, normal))(ui);
             add_contents(ui)
         })
-    }
-
-    /// Pass the [`egui::Ui`] content to an inner scope.
-    pub(super) fn scope_content<R>(
-        ui: &mut egui::Ui,
-        layer_id: egui::LayerId,
-        rect: egui::Rect,
-        add_contents: impl FnOnce(&mut egui::Ui) -> R,
-    ) -> R {
-        ui.scope_builder(
-            egui::UiBuilder::new()
-                .id_salt("animation_scope")
-                .max_rect(rect)
-                .layer_id(layer_id),
-            add_contents,
-        )
-        .inner
     }
 }
 
@@ -232,23 +215,18 @@ where
         vars: AnimValues<T>,
         add_contents: impl FnOnce(&mut egui::Ui, T) -> R,
     ) -> R {
+        let rect = ui.available_rect_before_wrap();
         match self.run_state(progress) {
-            SequenceRunState::OutSeg(normal) => self.animate_out(
-                ui,
-                id.with("_out"),
-                ui.available_rect_before_wrap(),
-                normal,
-                |ui| add_contents(ui, vars.start_value()),
-            ),
+            SequenceRunState::OutSeg(normal) => {
+                self.animate_out(ui, id.with("_out"), rect, normal, |ui| {
+                    add_contents(ui, vars.start_value())
+                })
+            }
             SequenceRunState::InSeg(normal) => {
                 mem::clear_animation_layer(ui, id.with("_out"));
-                self.animate_in(
-                    ui,
-                    id.with("_in"),
-                    ui.available_rect_before_wrap(),
-                    normal,
-                    |ui| add_contents(ui, vars.current_value()),
-                )
+                self.animate_in(ui, id.with("_in"), rect, normal, |ui| {
+                    add_contents(ui, vars.current_value())
+                })
             }
             SequenceRunState::None => {
                 mem::clear_start_value::<T>(ui, id);
@@ -256,7 +234,9 @@ where
                 mem::clear_animation_layer(ui, id.with("_out"));
                 mem::clear_animation_layer(ui, id.with("_in"));
 
-                add_contents(ui, vars.current_value())
+                scope_content(ui, ui.layer_id(), rect, |ui| {
+                    add_contents(ui, vars.current_value())
+                })
             }
         }
     }
@@ -300,11 +280,11 @@ where
         vars: AnimValues<T>,
         mut add_contents: impl FnMut(&mut egui::Ui, T) -> R,
     ) -> R {
+        let rect = ui.available_rect_before_wrap();
         match self.run_state(progress) {
             LayerRunState::Running { out_norm, in_norm } => {
                 let (start_value, current_value) = vars.split();
                 let (out_id, in_id) = (id.with("_out"), id.with("_in"));
-                let rect = ui.available_rect_before_wrap();
 
                 self.animate_out(ui, out_id, rect, out_norm, |ui| {
                     add_contents(ui, start_value)
@@ -319,7 +299,9 @@ where
                 mem::clear_animation_layer(ui, id.with("_out"));
                 mem::clear_animation_layer(ui, id.with("_in"));
 
-                add_contents(ui, vars.current_value())
+                scope_content(ui, ui.layer_id(), rect, |ui| {
+                    add_contents(ui, vars.current_value())
+                })
             }
         }
     }
@@ -375,6 +357,23 @@ impl LayerRunState {
             LayerRunState::None => false,
         }
     }
+}
+
+/// Pass the [`egui::Ui`] content to an inner scope.
+pub(super) fn scope_content<R>(
+    ui: &mut egui::Ui,
+    layer_id: egui::LayerId,
+    rect: egui::Rect,
+    add_contents: impl FnOnce(&mut egui::Ui) -> R,
+) -> R {
+    ui.scope_builder(
+        egui::UiBuilder::new()
+            .id_salt("animation_scope")
+            .max_rect(rect)
+            .layer_id(layer_id),
+        add_contents,
+    )
+    .inner
 }
 
 #[cfg(test)]
