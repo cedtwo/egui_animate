@@ -41,7 +41,8 @@ pub fn animate<T, R, A>(
     value: T,
     anim: A,
     mut add_contents: impl FnMut(&mut egui::Ui, T) -> R,
-) where
+) -> R
+where
     T: 'static + Any + Clone + Send + Sync + Default + PartialEq,
     A: Animate,
 {
@@ -63,7 +64,7 @@ pub fn animate<T, R, A>(
             ui.ctx().request_repaint();
             anim.animate(ui, id, state, vars, add_contents)
         }
-    };
+    }
 }
 
 /// Get the [`RunState`](Animate::RunState) for the animation of the given `id`. This is useful for
