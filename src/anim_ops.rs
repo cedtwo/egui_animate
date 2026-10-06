@@ -25,16 +25,13 @@ use crate::state::AnimValues;
 /// let mut my_state: u32 = 0;
 ///
 /// # let ctx = egui::Context::default();
-/// # ctx.run(egui::RawInput::default(), |ctx| {
-/// # egui::CentralPanel::default().show(ctx, |ui| {
+/// # ctx.run_ui(egui::RawInput::default(), |ui| {
 /// // An animation transitions out the prior value then transitions in the new value.
 /// animate(ui, "my_fade", my_state, FADE_ANIM, |ui, value| {
 ///     if ui.button(format!("Value is {}", value)).clicked() {
 ///         my_state += 1;
 ///     };
 /// });
-/// #
-/// # });
 /// # });
 /// ```
 pub fn animate<T, R, A>(
@@ -80,8 +77,7 @@ pub fn animate<T, R, A>(
 /// # let mut my_state: u32 = 0;
 /// #
 /// # let ctx = egui::Context::default();
-/// # ctx.run(egui::RawInput::default(), |ctx| {
-/// # egui::CentralPanel::default().show(ctx, |ui| {
+/// # ctx.run_ui(egui::RawInput::default(), |ui| {
 /// // Define an animation with a unique `id`.
 /// animate(ui, "my_anim", my_state, MY_ANIM, |ui, value| {
 ///     // ...
@@ -91,8 +87,6 @@ pub fn animate<T, R, A>(
 /// if run_state(ui, "my_anim", MY_ANIM).is_running() {
 ///     ui.label("Animation running...");
 /// }
-/// #
-/// # });
 /// # });
 /// ```
 pub fn run_state<A: Animate>(
