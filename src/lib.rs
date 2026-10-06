@@ -59,7 +59,7 @@
 //!         }
 //!     },
 //! );
-//! # });
+//! # }).textures_delta.clear();
 //! ```
 //!
 //! ## Operations

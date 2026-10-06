@@ -33,7 +33,7 @@ use crate::state::AnimValues;
 ///         my_state += 1;
 ///     };
 /// });
-/// # });
+/// # }).textures_delta.clear();
 /// ```
 pub fn animate<T, R, A>(
     ui: &mut egui::Ui,
@@ -91,7 +91,7 @@ where
 /// if run_state(ui, "my_anim", MY_ANIM).is_running() {
 ///     ui.label("Animation running...");
 /// }
-/// # });
+/// # }).textures_delta.clear();
 /// ```
 pub fn run_state<A: Animate>(
     ui: &mut egui::Ui,
