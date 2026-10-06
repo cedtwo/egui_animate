@@ -17,7 +17,7 @@
 //! elements. Animations can be customized by providing your own `FnMut(&mut egui::Ui, f32)`
 //! definitions that mutate a scoped `egui::Ui` with the `f32` normalized progression.
 //!
-//! ## Example
+//! ## Usage
 //!
 //! The following demonstrates a simple fade transition between "`Page`" `enum` variants.
 //! [`animate`](crate::anim_ops::animate) persists the prior `state` variable for the duration of
@@ -74,10 +74,21 @@
 //! The *normal* operations, [`fade`](norm_ops::fade), [`translate`](norm_ops::translate) and [`scale`](norm_ops::scale)
 //! are included to assist in defining an animation.
 //!
+//! ## Examples
+//!
+//! `egui_animate` includes two examples demonstrating transitioning ui pages using the [`Sequence`](crate::schedule::Sequence)
+//! and [`Layer`](crate::schedule::Layer) schedule.
+//!
+//! Command | Description
+//! ---|---
+//! `cargo run --example sequence` | Demonstrates a sequential translate/fade transition animation.
+//! `cargo run --example layer` | Demonstrates a layered scale/fade transition animation.
+//!
 //! ## Compatibility
 //!
 //! egui | egui_animate
 //! ---|---
+//! 0.35 | 0.5
 //! 0.34 | 0.4
 //! 0.33 | 0.3
 //! 0.32 | 0.2
