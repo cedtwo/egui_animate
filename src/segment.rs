@@ -6,10 +6,10 @@ pub(super) type AnimFn = fn(&mut egui::Ui, f32);
 /// A single segment of the animation.
 ///
 /// `AnimationSegment` Defines the `duration` of a segment (in seconds), and a mutating function for
-/// the [`Ui`](egui::Ui). Note that the duration of a single segment affects the total duration of a
-/// [`Sequence`](crate::schedule::Sequence) and [`Layer`](crate::schedule::Layer) animation
-/// differently. See [`Animation`](crate::prelude::Animation) and especially the documentation of
-/// the [`crate::schedule`] marker types for more.
+/// the [`Ui`](egui::Ui). Note that the duration of a single segment may not always increase the
+/// total duration of an animation.See the documentation of [`Animation`](crate::prelude::Animation)
+/// and especially [`Sequence`](crate::schedule::Sequence) and [`Layer`](crate::schedule::Layer) for
+/// more.
 ///
 /// ## Example
 ///
