@@ -30,7 +30,7 @@ use crate::state::{AnimProgress, AnimValues};
 /// ```
 /// # use egui_animate::prelude::*;
 /// // A simple linear sequential fade in/out animation.
-/// const ANIM: Animation<Sequence> = Animation::new(0.2, fade, fade);
+/// const ANIM: Animation<Sequence> = Animation::new_sequence(0.2, fade, fade);
 /// ```
 ///
 /// Providing our own function (or closure) allows for much more customization. The following
@@ -50,7 +50,7 @@ use crate::state::{AnimProgress, AnimValues};
 ///     fade(ui, normal);
 /// }
 ///
-/// const ANIM: Animation<Sequence> = Animation::new(0.2, anim_fn, anim_fn);
+/// const ANIM: Animation<Sequence> = Animation::new_sequence(0.2, anim_fn, anim_fn);
 /// ```
 ///
 /// Note that all operations are applied to a new [`egui::Ui`] scope when calling [`animate`](crate::anim_ops::animate).
@@ -70,6 +70,36 @@ impl<S> Animation<S, AnimFn, AnimFn> {
     /// An empty placeholder animation.
     pub const EMPTY: Self =
         Animation::from_segments(AnimationSegment::EMPTY, AnimationSegment::EMPTY);
+}
+
+impl<F0, F1> Animation<Sequence, F0, F1> {
+    /// Create a new `Animation` sequence with the given total `duration`, split over segments.
+    pub const fn new_sequence(duration: f32, out_fn: F0, in_fn: F1) -> Self {
+        let segment_duration = duration / 2.0;
+
+        let out_seg = AnimationSegment::new(segment_duration, out_fn);
+        let in_seg = AnimationSegment::new(segment_duration, in_fn);
+
+        Self {
+            out_seg,
+            in_seg,
+            _schedule: PhantomData,
+        }
+    }
+}
+
+impl<F0, F1> Animation<Layer, F0, F1> {
+    /// Create a new layered `Animation` of the given total `duration`.
+    pub const fn new_layer(duration: f32, out_fn: F0, in_fn: F1) -> Self {
+        let out_seg = AnimationSegment::new(duration, out_fn);
+        let in_seg = AnimationSegment::new(duration, in_fn);
+
+        Self {
+            out_seg,
+            in_seg,
+            _schedule: PhantomData,
+        }
+    }
 }
 
 impl<F0> Animation<Sequence, F0, AnimFn> {
@@ -103,20 +133,6 @@ impl<F1> Animation<Sequence, AnimFn, F1> {
 }
 
 impl<S, F0, F1> Animation<S, F0, F1> {
-    /// Create a new `Animation` with the given total `duration`, split over segments.
-    pub const fn new(duration: f32, out_fn: F0, in_fn: F1) -> Self {
-        let segment_duration = duration / 2.0;
-
-        let out_seg = AnimationSegment::new(segment_duration, out_fn);
-        let in_seg = AnimationSegment::new(segment_duration, in_fn);
-
-        Self {
-            out_seg,
-            in_seg,
-            _schedule: PhantomData,
-        }
-    }
-
     /// Create a new `Animation` from the given [`AnimationSegment`]s.
     pub const fn from_segments(
         out_seg: AnimationSegment<F0>,
@@ -382,7 +398,7 @@ mod tests {
 
     #[test]
     fn sequence_run_state() {
-        const ANIM: Animation<Sequence> = Animation::new(2.0, |_, _| {}, |_, _| {});
+        const ANIM: Animation<Sequence> = Animation::new_sequence(2.0, |_, _| {}, |_, _| {});
 
         assert_eq!(
             ANIM.run_state(AnimProgress::new(0.0, 0.0)),

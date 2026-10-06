@@ -1,8 +1,8 @@
 /// Animation state progress.
 #[derive(Debug, Clone, Copy)]
 pub struct AnimProgress {
-    start_time: f64,
-    current_time: f64,
+    pub(super) start_time: f64,
+    pub(super) current_time: f64,
 }
 
 impl AnimProgress {

@@ -20,7 +20,7 @@ use crate::state::AnimValues;
 /// # use eframe;
 /// # use egui_animate::prelude::*;
 /// // A linear sequential 0.3 second fade out/in animation.
-/// const FADE_ANIM: Animation<Sequence> = Animation::new(0.3, fade, fade);
+/// const FADE_ANIM: Animation<Sequence> = Animation::new_sequence(0.3, fade, fade);
 ///
 /// // The variable state.
 /// let mut my_state: u32 = 0;

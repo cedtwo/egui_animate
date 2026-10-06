@@ -29,7 +29,7 @@
 //! # use eframe;
 //! # use egui_animate::prelude::*;
 //! // A `0.5` second fade out/in animation.
-//! const FADE_ANIM: Animation<Sequence> = Animation::new(0.5, fade, fade);
+//! const FADE_ANIM: Animation<Sequence> = Animation::new_sequence(0.5, fade, fade);
 //!
 //! #[derive(Default, Clone, Copy, PartialEq)]
 //! enum Page {
